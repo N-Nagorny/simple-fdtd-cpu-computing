@@ -1,79 +1,80 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "fdtd_fields.h"
+#include "yee_grid.h"
+#include "read_grid.h"
 
 #define FDTD_FILENAME_BUF_SIZE 1024
 
-static void init_fdtd_struct(struct fdtd_fields *fields) {
-    fields->x_Ex = NULL;
-    fields->x_Ey = NULL;
-    fields->x_Ez = NULL;
-    fields->y_Ex = NULL;
-    fields->y_Ey = NULL;
-    fields->y_Ez = NULL;
-    fields->z_Ex = NULL;
-    fields->z_Ey = NULL;
-    fields->z_Ez = NULL;
-    fields->epsilon_Ex = NULL;
-    fields->epsilon_Ey = NULL;
-    fields->epsilon_Ez = NULL;
-    fields->sigmaE_Ex  = NULL;
-    fields->sigmaE_Ey  = NULL;
-    fields->sigmaE_Ez  = NULL;
+static void init_fdtd_struct(struct yee_grid *grid) {
+    grid->x_Ex = NULL;
+    grid->x_Ey = NULL;
+    grid->x_Ez = NULL;
+    grid->y_Ex = NULL;
+    grid->y_Ey = NULL;
+    grid->y_Ez = NULL;
+    grid->z_Ex = NULL;
+    grid->z_Ey = NULL;
+    grid->z_Ez = NULL;
+    grid->epsilon_Ex = NULL;
+    grid->epsilon_Ey = NULL;
+    grid->epsilon_Ez = NULL;
+    grid->sigmaE_Ex  = NULL;
+    grid->sigmaE_Ey  = NULL;
+    grid->sigmaE_Ez  = NULL;
 
-    fields->x_Hx = NULL;
-    fields->x_Hy = NULL;
-    fields->x_Hz = NULL;
-    fields->y_Hx = NULL;
-    fields->y_Hy = NULL;
-    fields->y_Hz = NULL;
-    fields->z_Hx = NULL;
-    fields->z_Hy = NULL;
-    fields->z_Hz = NULL;
-    fields->epsilon_Hx = NULL;
-    fields->epsilon_Hy = NULL;
-    fields->epsilon_Hz = NULL;
-    fields->sigmaH_Hx  = NULL;
-    fields->sigmaH_Hy  = NULL;
-    fields->sigmaH_Hz  = NULL;
+    grid->x_Hx = NULL;
+    grid->x_Hy = NULL;
+    grid->x_Hz = NULL;
+    grid->y_Hx = NULL;
+    grid->y_Hy = NULL;
+    grid->y_Hz = NULL;
+    grid->z_Hx = NULL;
+    grid->z_Hy = NULL;
+    grid->z_Hz = NULL;
+    grid->epsilon_Hx = NULL;
+    grid->epsilon_Hy = NULL;
+    grid->epsilon_Hz = NULL;
+    grid->sigmaH_Hx  = NULL;
+    grid->sigmaH_Hy  = NULL;
+    grid->sigmaH_Hz  = NULL;
 }
 
-void free_fdtd_struct(struct fdtd_fields *fields) {
+void free_fdtd_struct(struct yee_grid *grid) {
 
-    if (fields == NULL)
+    if (grid == NULL)
         return;
 
-    free(fields->x_Ex);
-    free(fields->x_Ey);
-    free(fields->x_Ez);
-    free(fields->y_Ex);
-    free(fields->y_Ey);
-    free(fields->y_Ez);
-    free(fields->z_Ex);
-    free(fields->z_Ey);
-    free(fields->z_Ez);
-    free(fields->epsilon_Ex);
-    free(fields->epsilon_Ey);
-    free(fields->epsilon_Ez);
-    free(fields->sigmaE_Ex);
-    free(fields->sigmaE_Ey);
-    free(fields->sigmaE_Ez);
+    free(grid->x_Ex);
+    free(grid->x_Ey);
+    free(grid->x_Ez);
+    free(grid->y_Ex);
+    free(grid->y_Ey);
+    free(grid->y_Ez);
+    free(grid->z_Ex);
+    free(grid->z_Ey);
+    free(grid->z_Ez);
+    free(grid->epsilon_Ex);
+    free(grid->epsilon_Ey);
+    free(grid->epsilon_Ez);
+    free(grid->sigmaE_Ex);
+    free(grid->sigmaE_Ey);
+    free(grid->sigmaE_Ez);
 
-    free (fields->x_Hx);
-    free (fields->x_Hy);
-    free (fields->x_Hz);
-    free (fields->y_Hx);
-    free (fields->y_Hy);
-    free (fields->y_Hz);
-    free (fields->z_Hx);
-    free (fields->z_Hy);
-    free (fields->z_Hz);
-    free(fields->epsilon_Hx);
-    free(fields->epsilon_Hy);
-    free(fields->epsilon_Hz);
-    free(fields->sigmaH_Hx);
-    free(fields->sigmaH_Hy);
-    free(fields->sigmaH_Hz);
+    free (grid->x_Hx);
+    free (grid->x_Hy);
+    free (grid->x_Hz);
+    free (grid->y_Hx);
+    free (grid->y_Hy);
+    free (grid->y_Hz);
+    free (grid->z_Hx);
+    free (grid->z_Hy);
+    free (grid->z_Hz);
+    free(grid->epsilon_Hx);
+    free(grid->epsilon_Hy);
+    free(grid->epsilon_Hz);
+    free(grid->sigmaH_Hx);
+    free(grid->sigmaH_Hy);
+    free(grid->sigmaH_Hz);
 }
 
 static float *read_floats_alloc(
@@ -105,13 +106,13 @@ e_out:
     return NULL;
 }
 
-struct fdtd_fields *read_fdtd_field(char *fnformat) {
+struct yee_grid *read_fdtd_field(char *fnformat) {
     size_t actually_read;
     size_t dims[18];
     char fnbuf[FDTD_FILENAME_BUF_SIZE];
     int const fnbuf_size = FDTD_FILENAME_BUF_SIZE;
 
-    struct fdtd_fields *result = malloc(sizeof(struct fdtd_fields));
+    struct yee_grid *result = malloc(sizeof(struct yee_grid));
     init_fdtd_struct(result);
 
     int wcount = snprintf(&fnbuf[0], fnbuf_size, fnformat, "dims");
