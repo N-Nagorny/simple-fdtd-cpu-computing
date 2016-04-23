@@ -1,6 +1,19 @@
+cmake_minimum_required(VERSION 2.8)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
+
+add_subdirectory(rvlm-common)
+add_subdirectory(netcdf-cxx4)
+
 add_executable(fdtd
-   src/main.c
-   src/read_values.c
-   src/read_grid.c
-   src/yee_grid.h
+   src/main.cc
+   #src/read_values.c
+   src/read_grid.cc
+   #src/fdtd_field.c
+   src/yee_grid.hh
 )
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+target_include_directories(fdtd PRIVATE "${NETCDF_INCLUDE_DIRS}")
+target_link_libraries(fdtd rvlm-common netcdf-cxx4)
