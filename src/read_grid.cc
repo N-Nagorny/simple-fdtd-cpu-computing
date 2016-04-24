@@ -35,7 +35,7 @@ static void readGridVar(SolidArray3d& destination, NcVar var,
 
             SolidArray3d::CursorType rowCursor = cursor;
             for (int iz = 0; iz < nz; ++iz) {
-                destination.at(cursor) = buf[iz];
+                destination.at(rowCursor) = buf[iz];
                 destination.cursorMoveToNextZ(rowCursor);
             }
 
@@ -54,13 +54,13 @@ static void readGridPoints(Array& destination, NcVar var) {
     var.getVar(destination.data());
 }
 
-YeeGrid readGridData(std::string const& filename) {
+YeeGrid readGridData(std::string const& filename, float deltaT) {
     NcFile file(filename, NcFile::read);
     int nx = file.getDim("grid_nx").getSize();
     int ny = file.getDim("grid_ny").getSize();
     int nz = file.getDim("grid_nz").getSize();
 
-    YeeGrid grid(nx, ny, nz);
+    YeeGrid grid(nx, ny, nz, deltaT);
 
     readGridPoints(grid.x_Ex, file.getVar("grid_x_Ex"));
     readGridPoints(grid.x_Ey, file.getVar("grid_x_Ey"));

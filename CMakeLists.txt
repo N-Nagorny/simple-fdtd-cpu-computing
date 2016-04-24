@@ -7,9 +7,8 @@ add_subdirectory(netcdf-cxx4)
 
 add_executable(fdtd
    src/main.cc
-   #src/read_values.c
    src/read_grid.cc
-   #src/fdtd_field.c
+   src/calc_field.cc
    src/yee_grid.hh
 )
 

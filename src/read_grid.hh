@@ -2,4 +2,4 @@
 #include <string>
 #include "yee_grid.hh"
 
-YeeGrid readGridData(std::string const& filename);
+YeeGrid readGridData(std::string const& filename, float deltaT);
