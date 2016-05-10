@@ -25,24 +25,21 @@ static void readGridVar(SolidArray3d& destination, NcVar var,
     destination.fill(0.0f);
 
     std::vector<float> buf(nz);
-    for (int ix = 0; ix < nx; ++ix) {
-        for (int iy = 0; iy < ny; ++iy) {
+    for (int ix = 0; ix < nx; ++ix, destination.cursorMoveToNextX(cursor)) {
+
+	SolidArray3d::CursorType yCursor = cursor;
+        for (int iy = 0; iy < ny; ++iy, destination.cursorMoveToNextY(yCursor)) {
             start[0] = ix;
             start[1] = iy;
             start[2] = 0;
 
             var.getVar(start, count, buf.data());
 
-            SolidArray3d::CursorType rowCursor = cursor;
-            for (int iz = 0; iz < nz; ++iz) {
-                destination.at(rowCursor) = buf[iz];
-                destination.cursorMoveToNextZ(rowCursor);
+            SolidArray3d::CursorType zCursor = yCursor;
+            for (int iz = 0; iz < nz; ++iz, destination.cursorMoveToNextZ(zCursor)) {
+                destination.at(zCursor) = buf[iz];
             }
-
-            destination.cursorMoveToNextY(cursor);
         }
-
-        destination.cursorMoveToNextX(cursor);
     }
 }
 
