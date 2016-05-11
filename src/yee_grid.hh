@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include "rvlm/core/SolidArray3d.hh"
 
 class YeeGrid {
@@ -8,16 +7,7 @@ class YeeGrid {
     using SolidArray3d = rvlm::core::SolidArray3d<float>;
 
 public:
-    YeeGrid(int nx, int ny, int nz, float deltaT):
-        x_Hx(nx),                   x_Ex(nx),
-        y_Hx(ny),                   y_Ex(ny),
-        z_Hx(nz),                   z_Ex(nz),
-        x_Hy(nx),                   x_Ey(nx),
-        y_Hy(ny),                   y_Ey(ny),
-        z_Hy(nz),                   z_Ey(nz),
-        x_Hz(nx),                   x_Ez(nx),
-        y_Hz(ny),                   y_Ez(ny),
-        z_Hz(nz),                   z_Ez(nz),
+    YeeGrid(int nx, int ny, int nz, float deltaT, float deltaX, float deltaY, float deltaZ):
         mu_Hx(nx+1, ny+1, nz+1),          epsilon_Ex(nx+1, ny+1, nz+1),
         mu_Hy(nx+1, ny+1, nz+1),          epsilon_Ey(nx+1, ny+1, nz+1),
         mu_Hz(nx+1, ny+1, nz+1),          epsilon_Ez(nx+1, ny+1, nz+1),
@@ -32,30 +22,9 @@ public:
         C_Ex(nx + 1, ny + 1, nz + 1),
         C_Ey(nx + 1, ny + 1, nz + 1),
         C_Ez(nx + 1, ny + 1, nz + 1),
-
         D_Ex(nx + 1, ny + 1, nz + 1),
         D_Ey(nx + 1, ny + 1, nz + 1),
         D_Ez(nx + 1, ny + 1, nz + 1),
-
-        //delta_x_Hx(nx),
-        delta_y_Hx(ny),
-        delta_z_Hx(nz),
-        delta_x_Hy(nx),
-        //delta_y_Hy(ny),
-        delta_z_Hy(nz),
-        delta_x_Hz(nx),
-        delta_y_Hz(ny),
-        //delta_z_Hz(nz),
-
-        //delta_x_Ex(nx),
-        delta_y_Ex(ny),
-        delta_z_Ex(nz),
-        delta_x_Ey(nx),
-        //delta_y_Ey(ny),
-        delta_z_Ey(nz),
-        delta_x_Ez(nx),
-        delta_y_Ez(ny),
-        //delta_z_Ez(nz),
 
         Hx(nx + 1, ny + 1, nz + 1),
         Hy(nx + 1, ny + 1, nz + 1),
@@ -101,18 +70,10 @@ public:
         Ez.fill(0.0f);
 
         delta_t = deltaT;
+        delta_x = deltaX;
+        delta_y = deltaY;
+        delta_z = deltaZ;
     }
-
-    // Magnetic field arays
-    Array x_Hx;
-    Array x_Hy;
-    Array x_Hz;
-    Array y_Hx;
-    Array y_Hy;
-    Array y_Hz;
-    Array z_Hx;
-    Array z_Hy;
-    Array z_Hz;
 
     SolidArray3d mu_Hx;
     SolidArray3d mu_Hy;
@@ -120,17 +81,6 @@ public:
     SolidArray3d sigma_Hx;
     SolidArray3d sigma_Hy;
     SolidArray3d sigma_Hz;
-
-    // Electric field arays
-    Array x_Ex;
-    Array x_Ey;
-    Array x_Ez;
-    Array y_Ex;
-    Array y_Ey;
-    Array y_Ez;
-    Array z_Ex;
-    Array z_Ey;
-    Array z_Ez;
 
     SolidArray3d epsilon_Ex;
     SolidArray3d epsilon_Ey;
@@ -152,26 +102,9 @@ public:
     SolidArray3d D_Ey;
     SolidArray3d D_Ez;
 
-    //Array delta_x_Hx;
-    Array delta_y_Hx;
-    Array delta_z_Hx;
-    Array delta_x_Hy;
-    //Array delta_y_Hy;
-    Array delta_z_Hy;
-    Array delta_x_Hz;
-    Array delta_y_Hz;
-    //Array delta_z_Hz;
-
-    //Array delta_x_Ex;
-    Array delta_y_Ex;
-    Array delta_z_Ex;
-    Array delta_x_Ey;
-    //Array delta_y_Ey;
-    Array delta_z_Ey;
-    Array delta_x_Ez;
-    Array delta_y_Ez;
-    //Array delta_z_Ez;
-
+    float delta_x;
+    float delta_y;
+    float delta_z;
     float delta_t;
 
     SolidArray3d Hx;

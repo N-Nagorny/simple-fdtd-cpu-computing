@@ -43,40 +43,13 @@ static void readGridVar(SolidArray3d& destination, NcVar var,
     }
 }
 
-static void readGridPoints(Array& destination, NcVar var) {
-
-    size_t len = var.getDim(0).getSize();
-    destination.resize(len);
-
-    var.getVar(destination.data());
-}
-
-YeeGrid readGridData(std::string const& filename, float deltaT) {
+YeeGrid readGridData(std::string const& filename, float deltaT, float deltaX, float deltaY, float deltaZ) {
     NcFile file(filename, NcFile::read);
     int nx = file.getDim("grid_nx").getSize();
     int ny = file.getDim("grid_ny").getSize();
     int nz = file.getDim("grid_nz").getSize();
 
-    YeeGrid grid(nx, ny, nz, deltaT);
-
-    readGridPoints(grid.x_Ex, file.getVar("grid_x_Ex"));
-    readGridPoints(grid.x_Ey, file.getVar("grid_x_Ey"));
-    readGridPoints(grid.x_Ez, file.getVar("grid_x_Ez"));
-    readGridPoints(grid.y_Ex, file.getVar("grid_y_Ex"));
-    readGridPoints(grid.y_Ey, file.getVar("grid_y_Ey"));
-    readGridPoints(grid.y_Ez, file.getVar("grid_y_Ez"));
-    readGridPoints(grid.z_Ex, file.getVar("grid_z_Ex"));
-    readGridPoints(grid.z_Ey, file.getVar("grid_z_Ey"));
-    readGridPoints(grid.z_Ez, file.getVar("grid_z_Ez"));
-    readGridPoints(grid.x_Hx, file.getVar("grid_x_Hx"));
-    readGridPoints(grid.x_Hy, file.getVar("grid_x_Hy"));
-    readGridPoints(grid.x_Hz, file.getVar("grid_x_Hz"));
-    readGridPoints(grid.y_Hx, file.getVar("grid_y_Hx"));
-    readGridPoints(grid.y_Hy, file.getVar("grid_y_Hy"));
-    readGridPoints(grid.y_Hz, file.getVar("grid_y_Hz"));
-    readGridPoints(grid.z_Hx, file.getVar("grid_z_Hx"));
-    readGridPoints(grid.z_Hy, file.getVar("grid_z_Hy"));
-    readGridPoints(grid.z_Hz, file.getVar("grid_z_Hz"));
+    YeeGrid grid(nx, ny, nz, deltaT, deltaX, deltaY, deltaZ);
 
     readGridVar(grid.epsilon_Ex, file.getVar("world_epsilon_Ex"),  0, 0, 0);
     readGridVar(grid.epsilon_Ey, file.getVar("world_epsilon_Ey"),  0, 0, 0);

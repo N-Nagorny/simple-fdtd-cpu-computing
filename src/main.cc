@@ -3,7 +3,7 @@
 #include <iostream>
 
 int main(int argc, char *argv[]) {
-    YeeGrid grid = readGridData("test.nc", 60e-12);
+    YeeGrid grid = readGridData("test.nc", 60e-12, 0.01, 0.01, 0.01);
     for (int ix = 0; ix < grid.mu_Hx.getCountX(); ix++)
     for (int iy = 0; iy < grid.mu_Hx.getCountY(); iy++)
     for (int iz = 0; iz < grid.mu_Hx.getCountZ(); iz++) {

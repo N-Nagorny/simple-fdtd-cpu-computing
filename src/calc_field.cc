@@ -1,6 +1,5 @@
 #include "yee_grid.hh"
 
-using Array = std::vector<float>;
 using SolidArray3d = rvlm::core::SolidArray3d<float>;
 
 void calcD(SolidArray3d& D, float deltaT,
@@ -31,17 +30,6 @@ void calcC(SolidArray3d& C, float deltaT,
     }
 }
 
-void calcDelta(Array& delta, Array const& coord) {
-    size_t n = coord.size();
-
-    delta.resize(n);
-    for (int i = 0; i < n - 1; i++)
-        delta[i] = coord[i+1] - coord[i];
-
-    // TODO: Allow explicit passing last delta values.
-    delta[n-1] = delta[n-2];
-}
-
 void calcCoefs(YeeGrid& grid) {
 
     calcD(grid.D_Hx, grid.delta_t, grid.mu_Hx, grid.sigma_Hx);
@@ -55,20 +43,6 @@ void calcCoefs(YeeGrid& grid) {
     calcD(grid.D_Ex, grid.delta_t, grid.epsilon_Ex, grid.sigma_Ex);
     calcD(grid.D_Ey, grid.delta_t, grid.epsilon_Ey, grid.sigma_Ey);
     calcD(grid.D_Ez, grid.delta_t, grid.epsilon_Ez, grid.sigma_Ez);
-
-    calcDelta(grid.delta_y_Hx, grid.y_Hx);
-    calcDelta(grid.delta_z_Hx, grid.z_Hx);
-    calcDelta(grid.delta_x_Hy, grid.x_Hy);
-    calcDelta(grid.delta_z_Hy, grid.z_Hy);
-    calcDelta(grid.delta_x_Hz, grid.x_Hz);
-    calcDelta(grid.delta_y_Hz, grid.y_Hz);
-
-    calcDelta(grid.delta_y_Ex, grid.y_Ex);
-    calcDelta(grid.delta_z_Ex, grid.z_Ex);
-    calcDelta(grid.delta_x_Ey, grid.x_Ey);
-    calcDelta(grid.delta_z_Ey, grid.z_Ey);
-    calcDelta(grid.delta_x_Ez, grid.x_Ez);
-    calcDelta(grid.delta_y_Ez, grid.y_Ez);
 }
 
 void calcH(YeeGrid& grid) {
@@ -76,6 +50,10 @@ void calcH(YeeGrid& grid) {
     int nx = grid.Hx.getCountX();
     int ny = grid.Hx.getCountY();
     int nz = grid.Hx.getCountZ();
+
+    float delta_x = grid.delta_x;
+    float delta_y = grid.delta_y;
+    float delta_z = grid.delta_z;
 
     for(int ix = 0; ix < nx-1; ix++)
     for(int iy = 0; iy < ny-1; iy++)
@@ -86,11 +64,9 @@ void calcH(YeeGrid& grid) {
         float  curEz0     = grid.Ez          .at(ix,   iy,   iz);
         float  curEy1     = grid.Ey          .at(ix,   iy,   iz+1);
         float  curEy0     = grid.Ey          .at(ix,   iy,   iz);
-        float  curDeltaEz = grid.delta_y_Ez  .at(iy);
-        float  curDeltaEy = grid.delta_z_Ey  .at(iz);
 
-        curHx -= curD_Hx * ((curEz1 - curEz0) / curDeltaEz -
-                            (curEy1 - curEy0) / curDeltaEy);
+        curHx -= curD_Hx * ((curEz1 - curEz0) / delta_y -
+                            (curEy1 - curEy0) / delta_z);
     }
 
     for(int ix = 0; ix < nx-1; ix++)
@@ -102,11 +78,9 @@ void calcH(YeeGrid& grid) {
         float  curEx0     = grid.Ex          .at(ix,   iy,   iz);
         float  curEz1     = grid.Ez          .at(ix+1, iy,   iz);
         float  curEz0     = grid.Ez          .at(ix,   iy,   iz);
-        float  curDeltaEx = grid.delta_z_Ex  .at(iz);
-        float  curDeltaEz = grid.delta_x_Ez  .at(ix);
 
-        curHy -= curD_Hy * ((curEx1 - curEx0) / curDeltaEx -
-                            (curEz1 - curEz0) / curDeltaEz);
+        curHy -= curD_Hy * ((curEx1 - curEx0) / delta_z -
+                            (curEz1 - curEz0) / delta_x);
     }
 
     for(int ix = 0; ix < nx-1; ix++)
@@ -118,11 +92,9 @@ void calcH(YeeGrid& grid) {
         float  curEy0     = grid.Ey          .at(ix,   iy,   iz);
         float  curEx1     = grid.Ex          .at(ix,   iy+1, iz);
         float  curEx0     = grid.Ex          .at(ix,   iy,   iz);
-        float  curDeltaEy = grid.delta_x_Ey  .at(ix);
-        float  curDeltaEx = grid.delta_y_Ex  .at(iy);
 
-        curHz -= curD_Hz * ((curEy1 - curEy0) / curDeltaEy -
-                            (curEx1 - curEx0) / curDeltaEx);
+        curHz -= curD_Hz * ((curEy1 - curEy0) / delta_x -
+                            (curEx1 - curEx0) / delta_y);
     }
 }
 
@@ -131,6 +103,10 @@ void calcE(YeeGrid& grid) {
     int nx = grid.Ex.getCountX();
     int ny = grid.Ex.getCountY();
     int nz = grid.Ex.getCountZ();
+
+    float delta_x = grid.delta_x;
+    float delta_y = grid.delta_y;
+    float delta_z = grid.delta_z;
 
     for(int ix = 1; ix < nx; ix++)
     for(int iy = 1; iy < ny; iy++)
@@ -142,11 +118,9 @@ void calcE(YeeGrid& grid) {
         float  curHz1     = grid.Hz          .at(ix,   iy-1, iz);
         float  curHy0     = grid.Hy          .at(ix,   iy,   iz);
         float  curHy1     = grid.Hy          .at(ix,   iy,   iz-1);
-        float  curDeltaHz = grid.delta_y_Hz  .at(iy-1);
-        float  curDeltaHy = grid.delta_z_Hy  .at(iz-1);
 
-        curEx = curC_Ex * curEx + curD_Ex * ((curHz0 - curHz1) / curDeltaHz -
-                                             (curHy0 - curHy1) / curDeltaHy);
+        curEx = curC_Ex * curEx + curD_Ex * ((curHz0 - curHz1) / delta_y -
+                                             (curHy0 - curHy1) / delta_z);
     }
 
     for(int ix = 1; ix < nx; ix++)
@@ -159,11 +133,9 @@ void calcE(YeeGrid& grid) {
         float  curHx1     = grid.Hx          .at(ix,   iy,   iz-1);
         float  curHz0     = grid.Hz          .at(ix,   iy,   iz);
         float  curHz1     = grid.Hz          .at(ix-1, iy,   iz);
-        float  curDeltaHx = grid.delta_z_Hx  .at(iz-1);
-        float  curDeltaHz = grid.delta_x_Hz  .at(ix-1);
 
-        curEy = curC_Ey * curEy + curD_Ey * ((curHx0 - curHx1) / curDeltaHx -
-                                             (curHz0 - curHz1) / curDeltaHz);
+        curEy = curC_Ey * curEy + curD_Ey * ((curHx0 - curHx1) / delta_z -
+                                             (curHz0 - curHz1) / delta_x);
     }
 
     for(int ix = 1; ix < nx; ix++)
@@ -176,10 +148,8 @@ void calcE(YeeGrid& grid) {
         float  curHy1     = grid.Hy          .at(ix-1, iy,   iz);
         float  curHx0     = grid.Hx          .at(ix,   iy,   iz);
         float  curHx1     = grid.Hx          .at(ix,   iy-1, iz);
-        float  curDeltaHy = grid.delta_x_Hy  .at(ix-1);
-        float  curDeltaHx = grid.delta_y_Hx  .at(iy-1);
 
-        curEz = curC_Ez * curEz + curD_Ez * ((curHy0 - curHy1) / curDeltaHy -
-                                             (curHx0 - curHx1) / curDeltaHx);
+        curEz = curC_Ez * curEz + curD_Ez * ((curHy0 - curHy1) / delta_x -
+                                             (curHx0 - curHx1) / delta_y);
     }
 }
