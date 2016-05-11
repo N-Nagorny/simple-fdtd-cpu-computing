@@ -10,6 +10,7 @@ add_executable(fdtd
    src/read_grid.cc
    src/calc_field.cc
    src/yee_grid.hh
+   src/resistive_source.hh
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")

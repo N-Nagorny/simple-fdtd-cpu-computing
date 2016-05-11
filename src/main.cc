@@ -1,5 +1,6 @@
 #include "read_grid.hh"
 #include "calc_field.hh"
+#include "resistive_source.hh"
 #include <iostream>
 
 int main(int argc, char *argv[]) {
