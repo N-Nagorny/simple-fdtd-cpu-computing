@@ -15,5 +15,8 @@ int main(int argc, char *argv[]) {
     for (int iz = 0; iz < grid.D_Hx.getCountZ(); iz++) {
         std::cout << grid.D_Hx.at(ix, iy, iz) << std::endl;
     }
+
+    calcH(grid);
+    calcE(grid);
     return 0;
 }
