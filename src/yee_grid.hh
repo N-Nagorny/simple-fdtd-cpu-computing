@@ -1,6 +1,9 @@
 #pragma once
 #include "rvlm/core/SolidArray3d.hh"
 
+const float eps0 = 8.8541878E-12;
+const float mu0  = 1.2566371E-6;
+
 class YeeGrid {
 
     using Array = std::vector<float>;
@@ -35,16 +38,16 @@ public:
         Ez(nx + 1, ny + 1, nz + 1)
 
     {
-        mu_Hx.fill(0.0f);
-        mu_Hy.fill(0.0f);
-        mu_Hz.fill(0.0f);
+        mu_Hx.fill(mu0);
+        mu_Hy.fill(mu0);
+        mu_Hz.fill(mu0);
         sigma_Hx.fill(0.0f);
         sigma_Hy.fill(0.0f);
         sigma_Hz.fill(0.0f);
 
-        epsilon_Ex.fill(0.0f);
-        epsilon_Ey.fill(0.0f);
-        epsilon_Ez.fill(0.0f);
+        epsilon_Ex.fill(eps0);
+        epsilon_Ey.fill(eps0);
+        epsilon_Ez.fill(eps0);
         sigma_Ex.fill(0.0f);
         sigma_Ey.fill(0.0f);
         sigma_Ez.fill(0.0f);
