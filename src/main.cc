@@ -47,9 +47,9 @@ void dumpImage(std::string const& filename, YeeGrid& grid) {
         float val  = grid.Ez.at(ix, iy, z0);
         unsigned char  blue = 0, red = 0;
         if (val >= 0)
-            blue = std::log(val + 1) / std::log(maxEx+1) * 2550;
+            blue = std::log(val/maxEx + 1) / std::log(2) * 255;
         else
-            red = std::log(-val + 1) / std::log(maxEx + 1) * 2550;
+            red = std::log(-val/maxEx + 1) / std::log(2) * 255;
 
 
         color[0] = red;        /* red */
