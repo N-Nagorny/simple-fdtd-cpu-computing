@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "rvlm/core/SolidArray3d.hh"
 
 const float eps0 = 8.8541878E-12;

@@ -48,6 +48,9 @@ public:
                                      voltage / (mResistance * delta_x * delta_y));
     }
 
+    float getC() const { return mCE; }
+    float getD() const { return mDE; }
+
 private:
     int mPosX, mPosY, mPosZ;
     float mCE, mDE;
