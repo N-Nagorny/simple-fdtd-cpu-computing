@@ -36,14 +36,12 @@ public:
         float delta_y = grid.delta_y;
 
         float& curEz      = grid.Ez          .at(ix,   iy,   iz);
-        float  curC_Ez    = grid.C_Ez        .at(ix,   iy,   iz);
-        float  curD_Ez    = grid.D_Ez        .at(ix,   iy,   iz);
         float  curHy0     = grid.Hy          .at(ix,   iy,   iz);
         float  curHy1     = grid.Hy          .at(ix-1, iy,   iz);
         float  curHx0     = grid.Hx          .at(ix,   iy,   iz);
         float  curHx1     = grid.Hx          .at(ix,   iy-1, iz);
 
-        curEz = mCE * curEz + mDE * ((curHy0 - curHy1) / delta_x -
+        curEz = mCE * mPrevE + mDE * ((curHy0 - curHy1) / delta_x -
                                      (curHx0 - curHx1) / delta_y +
                                      voltage / (mResistance * delta_x * delta_y));
     }

@@ -18,7 +18,7 @@ const float omega  = 2 * pi * c / lambda;
 const float dx = lambda / nl;
 const float dy = dx;
 const float dz = dx;
-const float dt = 1/(c * std::sqrt(1/(dx*dx) + 1/(dy*dy) + 1/(dz*dz)));
+const float dt = 0.5/(c * std::sqrt(1/(dx*dx) + 1/(dy*dy) + 1/(dz*dz)));
 
 void dumpImage(std::string const& filename, YeeGrid& grid) {
     int nx = grid.Ez.getCountX();
@@ -42,21 +42,21 @@ void dumpImage(std::string const& filename, YeeGrid& grid) {
     std::ofstream output(filename, std::ios::binary);
     output << "P6\n" << nx << " " << ny << "\n" << 255 << "\n";
 
-    unsigned char color[3];
+    char color[3];
     for (int iy = 0; iy < ny; ++iy)
     for (int ix = 0; ix < nx; ++ix) {
         float val  = grid.Ez.at(ix, iy, z0);
-        unsigned char  blue = 0, red = 0;
+        unsigned blue = 0;
+        unsigned red  = 0;
         if (val >= 0)
             blue = std::log(val/maxEx + 1) / std::log(2) * 255;
         else
             red = std::log(-val/maxEx + 1) / std::log(2) * 255;
 
-
-        color[0] = red;        /* red */
-        color[1] = 0;        /* green */
-        color[2] = blue;  /* blue */
-        output.write(reinterpret_cast<char*>(&color[0]), 3);
+        color[0] = red;   // red
+        color[1] = 0;           // green
+        color[2] = blue;  // blue
+        output.write(&color[0], 3);
     }
 }
 
@@ -68,7 +68,7 @@ YeeGrid setupGrid() {
     int z0 = nz / 2;
 
     float epsilonAntenna = 10;
-    float sigmaAntenna = 10000000;
+    float sigmaAntenna = 10000;
     for (int i = 0; i < nl; ++i) {
         grid.epsilon_Ez.at(x0, y0, z0 + i) = epsilonAntenna;
         grid.epsilon_Ez.at(x0, y0, z0 + i) = epsilonAntenna;
