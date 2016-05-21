@@ -12,31 +12,31 @@ class YeeGrid {
 
 public:
     YeeGrid(int nx, int ny, int nz, float deltaT, float deltaX, float deltaY, float deltaZ):
-        mu_Hx(nx+1, ny+1, nz+1),          epsilon_Ex(nx+1, ny+1, nz+1),
-        mu_Hy(nx+1, ny+1, nz+1),          epsilon_Ey(nx+1, ny+1, nz+1),
-        mu_Hz(nx+1, ny+1, nz+1),          epsilon_Ez(nx+1, ny+1, nz+1),
-        sigma_Hx(nx+1, ny+1, nz+1),       sigma_Ex(nx+1, ny+1, nz+1),
-        sigma_Hy(nx+1, ny+1, nz+1),       sigma_Ey(nx+1, ny+1, nz+1),
-        sigma_Hz(nx+1, ny+1, nz+1),       sigma_Ez(nx+1, ny+1, nz+1),
+        mu_Hx(nx, ny, nz),          epsilon_Ex(nx, ny, nz),
+        mu_Hy(nx, ny, nz),          epsilon_Ey(nx, ny, nz),
+        mu_Hz(nx, ny, nz),          epsilon_Ez(nx, ny, nz),
+        sigma_Hx(nx, ny, nz),       sigma_Ex(nx, ny, nz),
+        sigma_Hy(nx, ny, nz),       sigma_Ey(nx, ny, nz),
+        sigma_Hz(nx, ny, nz),       sigma_Ez(nx, ny, nz),
 
-        D_Hx(nx + 1, ny + 1, nz + 1),
-        D_Hy(nx + 1, ny + 1, nz + 1),
-        D_Hz(nx + 1, ny + 1, nz + 1),
+        D_Hx(nx, ny, nz),
+        D_Hy(nx, ny, nz),
+        D_Hz(nx, ny, nz),
 
-        C_Ex(nx + 1, ny + 1, nz + 1),
-        C_Ey(nx + 1, ny + 1, nz + 1),
-        C_Ez(nx + 1, ny + 1, nz + 1),
-        D_Ex(nx + 1, ny + 1, nz + 1),
-        D_Ey(nx + 1, ny + 1, nz + 1),
-        D_Ez(nx + 1, ny + 1, nz + 1),
+        C_Ex(nx, ny, nz),
+        C_Ey(nx, ny, nz),
+        C_Ez(nx, ny, nz),
+        D_Ex(nx, ny, nz),
+        D_Ey(nx, ny, nz),
+        D_Ez(nx, ny, nz),
 
-        Hx(nx + 1, ny + 1, nz + 1),
-        Hy(nx + 1, ny + 1, nz + 1),
-        Hz(nx + 1, ny + 1, nz + 1),
+        Hx(nx, ny, nz),
+        Hy(nx, ny, nz),
+        Hz(nx, ny, nz),
 
-        Ex(nx + 1, ny + 1, nz + 1),
-        Ey(nx + 1, ny + 1, nz + 1),
-        Ez(nx + 1, ny + 1, nz + 1)
+        Ex(nx, ny, nz),
+        Ey(nx, ny, nz),
+        Ez(nx, ny, nz)
 
     {
         mu_Hx.fill(mu0);

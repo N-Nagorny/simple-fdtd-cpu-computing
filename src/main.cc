@@ -38,7 +38,7 @@ void dumpImage(std::string const& filename, YeeGrid& grid) {
             maxEx = curAbs;
     }
 
-    std::cout << "MAX: " << maxEx << std::endl;
+    //std::cout << "MAX: " << maxEx << std::endl;
 
     std::ofstream output(filename, std::ios::binary);
     output << "P6\n" << nx << " " << ny << "\n" << 255 << "\n";
@@ -109,12 +109,11 @@ int cpu_main() {
     int x0 = nx / 2;
     int y0 = ny / 2;
     int z0 = nz / 2;
-    ResistiveSource rsource(x0, y0, z0, 10);
+    ResistiveSource rsource(x0, y0, z0, 10.0f);
     rsource.calcCoefs(grid);
 
     float time = 0;
-    int iter = 0;
-    while (true) {
+    for (int iter = 0; iter < 300; ++iter) {
 
         std::cout << "Rocking iteration #" << iter << std::endl;
         std::cout << measure<std::chrono::milliseconds>::execution([&grid]() {calcH(grid);}) << std::endl;
@@ -125,8 +124,9 @@ int cpu_main() {
         rsource.updateFields(grid, voltage(time));
 
         std::string filename = str(boost::format("field_%04d.ppm") % iter);
-        dumpImage(filename, grid);
-        iter++;
+        std::cout << "VAL: " << grid.Ez.at(x0 + 10, y0, z0) << std::endl;
+
+        //dumpImage(filename, grid);
         time = dt*iter;
     }
 
@@ -137,7 +137,11 @@ int gpu_main() {
     YeeGrid grid(nx, ny, nz, dt, dx, dy, dz);
     setupGrid(grid);
     calcCoefs(grid);
-    ResistiveSource rsource(nx/2, ny/2, nz/2, 10);
+
+    int x0 = nx / 2;
+    int y0 = ny / 2;
+    int z0 = nz / 2;
+    ResistiveSource rsource(x0, y0, z0, 10.0f);
     rsource.calcCoefs(grid);
 
     if( !EasyCL::isOpenCLAvailable() ) {
@@ -185,67 +189,19 @@ int gpu_main() {
     wD_Hz->copyToDevice();
 
 
-    std::cout << "fuck kernel" << std::endl;
     CLKernel *kernelE = cl->buildKernel("../src/kernels.cl", "calcE");
-
-    kernelE->in((int)grid.Ex.getCountX());
-    std::cout << "fuck kernel" << std::endl;
-    kernelE->in((int)grid.Ex.getCountY());
-    kernelE->in((int)grid.Ex.getCountZ());
-    kernelE->in(grid.delta_x);
-    kernelE->in(grid.delta_y);
-    kernelE->in(grid.delta_z);
-    std::cout << "fuck kernel" << std::endl;
-    kernelE->out(wEx);
-    kernelE->out(wEy);
-    kernelE->out(wEz);
-    kernelE->in(wHx);
-    kernelE->in(wHy);
-    kernelE->in(wHz);
-    kernelE->in(wC_Ex);
-    kernelE->in(wC_Ey);
-    kernelE->in(wC_Ez);
-    kernelE->in(wD_Ex);
-    kernelE->in(wD_Ey);
-    kernelE->in(wD_Ez);
-
     CLKernel *kernelH = cl->buildKernel("../src/kernels.cl", "calcH");
-
-    kernelH->in((int)grid.Hx.getCountX());
-    kernelH->in((int)grid.Hx.getCountY());
-    kernelH->in((int)grid.Hx.getCountZ());
-    kernelH->in(grid.delta_x);
-    kernelH->in(grid.delta_y);
-    kernelH->in(grid.delta_z);
-    kernelH->in(wEx);
-    kernelH->in(wEy);
-    kernelH->in(wEz);
-    kernelH->inout(wHx);
-    kernelH->inout(wHy);
-    kernelH->inout(wHz);
-    kernelH->in(wD_Hx);
-    kernelH->in(wD_Hy);
-    kernelH->in(wD_Hz);
 
     float prevE = 0;
     CLWrapper *wprevE = cl->wrap(1, &prevE);
     wprevE->copyToDevice();
 
     CLKernel *rescueField = cl->buildKernel("../src/kernels.cl", "rescueField");
-    rescueField->in(nx / 2)
-               ->in(ny/2)
-               ->in(nz/2)
-               ->in(nx)
-               ->in(ny)
-               ->in(nz)
-               ->in(wEz)
-               ->out(wprevE);
     CLKernel *updateField = cl->buildKernel("../src/kernels.cl", "updateField");
-    cl->storeKernel("updateField", updateField);
 
 
 
-    std::vector<size_t> global_dims = { 128, 128, 128 },
+    std::vector<size_t> global_dims = { nx - 1, ny - 1, nz - 1 },
                         local_dims  = { 8, 8, 8 };
 
 
@@ -254,8 +210,61 @@ int gpu_main() {
     for (int iter = 0; iter < 300; ++iter) {
         time = iter * dt;
 
-    CLKernel *upd = cl->getKernel("updateField");
-        upd->in(nx / 2)
+
+    std::cout << "step: " << iter << std::endl;
+    std::cout << "  voltage: " << voltage(time) << std::endl;
+    kernelH
+            ->in((int)grid.Hx.getCountX())
+            ->in((int)grid.Hx.getCountY())
+            ->in((int)grid.Hx.getCountZ())
+            ->in(grid.delta_x)
+            ->in(grid.delta_y)
+            ->in(grid.delta_z)
+            ->in(wEx)
+            ->in(wEy)
+            ->in(wEz)
+            ->inout(wHx)
+            ->inout(wHy)
+            ->inout(wHz)
+            ->in(wD_Hx)
+            ->in(wD_Hy)
+            ->in(wD_Hz)
+            ->run(3, global_dims.data(), local_dims.data());
+
+    cl->finish();
+    rescueField->in(nx / 2)
+               ->in(ny/2)
+               ->in(nz/2)
+               ->in(nx)
+               ->in(ny)
+               ->in(nz)
+               ->in(wEz)
+               ->out(wprevE)
+               ->run_1d(1, 1);
+    //rsource.resqueFields(grid);
+
+    kernelE->in((int)grid.Ex.getCountX())
+            ->in((int)grid.Ex.getCountY())
+            ->in((int)grid.Ex.getCountZ())
+            ->in(grid.delta_x)
+            ->in(grid.delta_y)
+            ->in(grid.delta_z)
+            ->out(wEx)
+            ->out(wEy)
+            ->out(wEz)
+            ->in(wHx)
+            ->in(wHy)
+            ->in(wHz)
+            ->in(wC_Ex)
+            ->in(wC_Ey)
+            ->in(wC_Ez)
+            ->in(wD_Ex)
+            ->in(wD_Ey)
+            ->in(wD_Ez)
+            ->run(3, global_dims.data(), local_dims.data());
+
+    cl->finish();
+    updateField->in(nx / 2)
                    ->in(ny / 2)
                    ->in(nz / 2)
                    ->in(nx)
@@ -270,24 +279,20 @@ int gpu_main() {
                    ->in(10.f) // Ohm
                    ->in(voltage(time))
                    ->in(grid.delta_x)
-                   ->in(grid.delta_y);
+                   ->in(grid.delta_y)
+                   ->run_1d(1, 1);
 
-
-    std::cout << "step: " << iter << std::endl;
-    std::cout << "  voltage: " << voltage(time) << std::endl;
-    kernelH->run(3, global_dims.data(), local_dims.data());
-
-    rescueField->run_1d(1,1);
-
-    kernelE->run(3, global_dims.data(), local_dims.data());
-
-    upd->run_1d(1, 1);
     cl->finish();
 
     cl->dumpProfiling();
     wEz->copyToHost();
+
+    //rsource.updateFields(grid, voltage(time));
+    //wEz->copyToDevice();
+
     std::string filename = str(boost::format("clfield_%04d.ppm") % iter);
-    dumpImage(filename, grid);
+    std::cout << "VAL: " << grid.Ez.at(x0 + 10, y0, z0) << std::endl;
+    //dumpImage(filename, grid);
 
     }
 
