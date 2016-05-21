@@ -5,6 +5,7 @@
 #include <fstream>
 #include <boost/format.hpp>
 #include "EasyCL.h"
+#include <chrono>
 
 const float c = 299792458.0f;
 const float pi = 3.14159265358;
@@ -79,7 +80,26 @@ float voltage(float time) {
     return std::sin(omega*time) * 1000;
 }
 
-int main_2(int argc, char *argv[]) {
+template<typename TimeT = std::chrono::milliseconds>
+struct measure
+{
+    template<typename F, typename ...Args>
+    static typename TimeT::rep execution(F func, Args&&... args)
+    {
+        auto start = std::chrono::system_clock::now();
+
+        // Now call the function with all the parameters you need.
+        func(std::forward<Args>(args)...);
+
+        auto duration = std::chrono::duration_cast< TimeT>
+                            (std::chrono::system_clock::now() - start);
+
+        return duration.count();
+    }
+};
+
+
+int cpu_main() {
     YeeGrid grid(nx, ny, nz, dt, dx, dy, dz);
     setupGrid(grid);
     calcCoefs(grid);
@@ -95,11 +115,13 @@ int main_2(int argc, char *argv[]) {
     float time = 0;
     int iter = 0;
     while (true) {
+
         std::cout << "Rocking iteration #" << iter << std::endl;
-        calcH(grid);
+        std::cout << measure<std::chrono::milliseconds>::execution([&grid]() {calcH(grid);}) << std::endl;
 
         rsource.resqueFields(grid);
-        calcE(grid);
+        std::cout << measure<std::chrono::milliseconds>::execution([&grid]() {calcE(grid);}) << std::endl;
+
         rsource.updateFields(grid, voltage(time));
 
         std::string filename = str(boost::format("field_%04d.ppm") % iter);
@@ -111,7 +133,7 @@ int main_2(int argc, char *argv[]) {
     return 0;
 }
 
-int main(int argc, char *argv[]) {
+int gpu_main() {
     YeeGrid grid(nx, ny, nz, dt, dx, dy, dz);
     setupGrid(grid);
     calcCoefs(grid);
@@ -124,6 +146,7 @@ int main(int argc, char *argv[]) {
     }
 
     EasyCL *cl = EasyCL::createForFirstGpu();
+    cl->setProfiling(true);
 
     CLWrapper *wEx = cl->wrap(grid.Ex.getTotalCount(), &grid.Ex.at(0,0,0));
     wEx->copyToDevice();
@@ -261,6 +284,7 @@ int main(int argc, char *argv[]) {
     upd->run_1d(1, 1);
     cl->finish();
 
+    cl->dumpProfiling();
     wEz->copyToHost();
     std::string filename = str(boost::format("clfield_%04d.ppm") % iter);
     dumpImage(filename, grid);
@@ -271,4 +295,18 @@ int main(int argc, char *argv[]) {
     delete kernelE;
 
     return 0;
+}
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        std::cout << "Invalid command line parameters number.\n";
+        return -1;
+    }
+    std::string work_mode = argv[1];
+
+
+    if (work_mode == "cpu")
+        return cpu_main();
+    if (work_mode == "gpu")
+        return gpu_main();
 }
