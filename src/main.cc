@@ -29,7 +29,7 @@ void dumpImage(std::string const& filename, YeeGrid& grid) {
     for (int ix = 0; ix < nx; ++ix)
     for (int iy = 0; iy < ny; ++iy) {
         if ( ((nx/2 - 3) <= ix && ix <= (nx/2 + 3)) &&
-             ((ny/2 - 3) <= iy && iy <= (nx/2 + 3)) )
+             ((ny/2 - 3) <= iy && iy <= (ny/2 + 3)) )
             continue;
 
         float curAbs = std::abs(grid.Ez.at(ix, iy, z0));
@@ -60,9 +60,7 @@ void dumpImage(std::string const& filename, YeeGrid& grid) {
     }
 }
 
-YeeGrid setupGrid() {
-
-    YeeGrid grid(nx, ny, nz, dt, dx, dy, dz);
+void setupGrid(YeeGrid& grid) {
     int x0 = nx / 2;
     int y0 = ny / 2;
     int z0 = nz / 2;
@@ -71,12 +69,10 @@ YeeGrid setupGrid() {
     float sigmaAntenna = 10000;
     for (int i = 0; i < nl; ++i) {
         grid.epsilon_Ez.at(x0, y0, z0 + i) = epsilonAntenna;
-        grid.epsilon_Ez.at(x0, y0, z0 + i) = epsilonAntenna;
-        grid.sigma_Ez.at(x0, y0, z0 - i) = sigmaAntenna;
+        grid.epsilon_Ez.at(x0, y0, z0 - i) = epsilonAntenna;
+        grid.sigma_Ez.at(x0, y0, z0 + i) = sigmaAntenna;
         grid.sigma_Ez.at(x0, y0, z0 - i) = sigmaAntenna;
     }
-
-    return grid;
 }
 
 float voltage(float time) {
@@ -84,7 +80,8 @@ float voltage(float time) {
 }
 
 int main_2(int argc, char *argv[]) {
-    YeeGrid grid = setupGrid();
+    YeeGrid grid(nx, ny, nz, dt, dx, dy, dz);
+    setupGrid(grid);
     calcCoefs(grid);
 
     dumpImage("test.ppm", grid);
@@ -93,6 +90,7 @@ int main_2(int argc, char *argv[]) {
     int y0 = ny / 2;
     int z0 = nz / 2;
     ResistiveSource rsource(x0, y0, z0, 10);
+    rsource.calcCoefs(grid);
 
     float time = 0;
     int iter = 0;
@@ -114,7 +112,8 @@ int main_2(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-    YeeGrid grid = setupGrid();
+    YeeGrid grid(nx, ny, nz, dt, dx, dy, dz);
+    setupGrid(grid);
     calcCoefs(grid);
     ResistiveSource rsource(nx/2, ny/2, nz/2, 10);
     rsource.calcCoefs(grid);
