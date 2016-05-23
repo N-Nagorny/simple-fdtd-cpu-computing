@@ -10,9 +10,9 @@
 const float c = 299792458.0f;
 const float pi = 3.14159265358;
 
-const int nx = 129;
-const int ny = 129;
-const int nz = 129;
+int nx;
+int ny;
+int nz;
 const int nl = 20;
 const float lambda = 0.05;
 const float omega  = 2 * pi * c / lambda;
@@ -104,7 +104,7 @@ int cpu_main() {
     setupGrid(grid);
     calcCoefs(grid);
 
-    dumpImage("test.ppm", grid);
+    //dumpImage("test.ppm", grid);
 
     int x0 = nx / 2;
     int y0 = ny / 2;
@@ -123,10 +123,10 @@ int cpu_main() {
 
         rsource.updateFields(grid, voltage(time));
 
-        std::string filename = str(boost::format("field_%04d.ppm") % iter);
+        std::string filename = str(boost::format("field.%03d_%03d.ppm") % nx % iter);
         std::cout << "VAL: " << grid.Ez.at(x0 + 10, y0, z0) << std::endl;
 
-        //dumpImage(filename, grid);
+        dumpImage(filename, grid);
         time = dt*iter;
     }
 
@@ -290,9 +290,9 @@ int gpu_main() {
     //rsource.updateFields(grid, voltage(time));
     //wEz->copyToDevice();
 
-    std::string filename = str(boost::format("clfield_%04d.ppm") % iter);
+    std::string filename = str(boost::format("CLfield.%03d_%03d.ppm") % nx % iter);
     std::cout << "VAL: " << grid.Ez.at(x0 + 10, y0, z0) << std::endl;
-    //dumpImage(filename, grid);
+    dumpImage(filename, grid);
 
     }
 
@@ -303,11 +303,14 @@ int gpu_main() {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
+    if (argc != 3) {
         std::cout << "Invalid command line parameters number.\n";
         return -1;
     }
     std::string work_mode = argv[1];
+    nx = atoi(argv[2]);
+    ny = atoi(argv[2]);
+    nz = atoi(argv[2]);
 
 
     if (work_mode == "cpu")
