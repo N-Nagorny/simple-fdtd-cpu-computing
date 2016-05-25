@@ -116,10 +116,12 @@ int cpu_main() {
     for (int iter = 0; iter < 300; ++iter) {
 
         std::cout << "Rocking iteration #" << iter << std::endl;
-        std::cout << measure<std::chrono::milliseconds>::execution([&grid]() {calcH(grid);}) << std::endl;
+        std::cout << "calcH_time: "
+                  << measure<std::chrono::milliseconds>::execution([&grid]() {calcH(grid);}) << std::endl;
 
         rsource.resqueFields(grid);
-        std::cout << measure<std::chrono::milliseconds>::execution([&grid]() {calcE(grid);}) << std::endl;
+        std::cout << "calcE_time: "
+                  << measure<std::chrono::milliseconds>::execution([&grid]() {calcE(grid);}) << std::endl;
 
         rsource.updateFields(grid, voltage(time));
 
