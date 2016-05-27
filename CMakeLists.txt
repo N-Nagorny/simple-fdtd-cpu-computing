@@ -8,8 +8,7 @@ add_subdirectory(EasyCL)
 
 add_executable(fdtd
    src/main.cc
-   src/read_grid.cc
-   src/calc_field.cc
+   #src/read_grid.cc
    src/yee_grid.hh
    src/resistive_source.hh
    src/kernels.cl

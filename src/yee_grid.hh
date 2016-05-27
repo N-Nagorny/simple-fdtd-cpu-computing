@@ -1,121 +1,85 @@
 #pragma once
-#include <vector>
+#include "rvlm/core/Constants.hh"
 #include "rvlm/core/SolidArray3d.hh"
 
-const float eps0 = 8.8541878E-12;
-const float mu0  = 1.2566371E-6;
-
+template <typename valueType>
 class YeeGrid {
+public:
 
-    using Array = std::vector<float>;
-    using SolidArray3d = rvlm::core::SolidArray3d<float>;
+    using Const = rvlm::core::Constants<valueType>;
+
+    typedef valueType ValueType;
+    typedef rvlm::core::SolidArray3d<valueType> ArrayType;
 
 public:
-    YeeGrid(int nx, int ny, int nz, float deltaT, float deltaX, float deltaY, float deltaZ):
-        mu_Hx(nx+1, ny+1, nz+1),          epsilon_Ex(nx+1, ny+1, nz+1),
-        mu_Hy(nx+1, ny+1, nz+1),          epsilon_Ey(nx+1, ny+1, nz+1),
-        mu_Hz(nx+1, ny+1, nz+1),          epsilon_Ez(nx+1, ny+1, nz+1),
-        sigma_Hx(nx+1, ny+1, nz+1),       sigma_Ex(nx+1, ny+1, nz+1),
-        sigma_Hy(nx+1, ny+1, nz+1),       sigma_Ey(nx+1, ny+1, nz+1),
-        sigma_Hz(nx+1, ny+1, nz+1),       sigma_Ez(nx+1, ny+1, nz+1),
+    YeeGrid(int nx, int ny, int nz,
+            ValueType dt, ValueType dx, ValueType dy, ValueType dz)
+        : delta_t(dt)
+        , delta_x(dx)
+        , delta_y(dy)
+        , delta_z(dz)
+        , Hx         (nx, ny, nz,   0)
+        , Hy         (nx, ny, nz,   0)
+        , Hz         (nx, ny, nz,   0)
+        , Ex         (nx, ny, nz,   0)
+        , Ey         (nx, ny, nz,   0)
+        , Ez         (nx, ny, nz,   0)
+        , mu_Hx      (nx, ny, nz,   Const::MU_0)
+        , mu_Hy      (nx, ny, nz,   Const::MU_0)
+        , mu_Hz      (nx, ny, nz,   Const::MU_0)
+        , epsilon_Ex (nx, ny, nz,   Const::EPS_0)
+        , epsilon_Ey (nx, ny, nz,   Const::EPS_0)
+        , epsilon_Ez (nx, ny, nz,   Const::EPS_0)
+        , sigma_Hx   (nx, ny, nz,   0)
+        , sigma_Hy   (nx, ny, nz,   0)
+        , sigma_Hz   (nx, ny, nz,   0)
+        , sigma_Ex   (nx, ny, nz,   0)
+        , sigma_Ey   (nx, ny, nz,   0)
+        , sigma_Ez   (nx, ny, nz,   0)
+        , D_Hx       (nx, ny, nz,   0)
+        , D_Hy       (nx, ny, nz,   0)
+        , D_Hz       (nx, ny, nz,   0)
+        , C_Ex       (nx, ny, nz,   0)
+        , C_Ey       (nx, ny, nz,   0)
+        , C_Ez       (nx, ny, nz,   0)
+        , D_Ex       (nx, ny, nz,   0)
+        , D_Ey       (nx, ny, nz,   0)
+        , D_Ez       (nx, ny, nz,   0)
+    {}
 
-        D_Hx(nx + 1, ny + 1, nz + 1),
-        D_Hy(nx + 1, ny + 1, nz + 1),
-        D_Hz(nx + 1, ny + 1, nz + 1),
+public:
+    ValueType delta_x;
+    ValueType delta_y;
+    ValueType delta_z;
+    ValueType delta_t;
 
-        C_Ex(nx + 1, ny + 1, nz + 1),
-        C_Ey(nx + 1, ny + 1, nz + 1),
-        C_Ez(nx + 1, ny + 1, nz + 1),
-        D_Ex(nx + 1, ny + 1, nz + 1),
-        D_Ey(nx + 1, ny + 1, nz + 1),
-        D_Ez(nx + 1, ny + 1, nz + 1),
+    ArrayType Hx;
+    ArrayType Hy;
+    ArrayType Hz;
+    ArrayType Ex;
+    ArrayType Ey;
+    ArrayType Ez;
 
-        Hx(nx + 1, ny + 1, nz + 1),
-        Hy(nx + 1, ny + 1, nz + 1),
-        Hz(nx + 1, ny + 1, nz + 1),
+    ArrayType mu_Hx;
+    ArrayType mu_Hy;
+    ArrayType mu_Hz;
+    ArrayType epsilon_Ex;
+    ArrayType epsilon_Ey;
+    ArrayType epsilon_Ez;
+    ArrayType sigma_Hx;
+    ArrayType sigma_Hy;
+    ArrayType sigma_Hz;
+    ArrayType sigma_Ex;
+    ArrayType sigma_Ey;
+    ArrayType sigma_Ez;
 
-        Ex(nx + 1, ny + 1, nz + 1),
-        Ey(nx + 1, ny + 1, nz + 1),
-        Ez(nx + 1, ny + 1, nz + 1)
-
-    {
-        mu_Hx.fill(mu0);
-        mu_Hy.fill(mu0);
-        mu_Hz.fill(mu0);
-        sigma_Hx.fill(0.0f);
-        sigma_Hy.fill(0.0f);
-        sigma_Hz.fill(0.0f);
-
-        epsilon_Ex.fill(eps0);
-        epsilon_Ey.fill(eps0);
-        epsilon_Ez.fill(eps0);
-        sigma_Ex.fill(0.0f);
-        sigma_Ey.fill(0.0f);
-        sigma_Ez.fill(0.0f);
-
-        D_Hx.fill(0.0f);
-        D_Hy.fill(0.0f);
-        D_Hz.fill(0.0f);
-
-        C_Ex.fill(0.0f);
-        C_Ey.fill(0.0f);
-        C_Ez.fill(0.0f);
-
-        D_Ex.fill(0.0f);
-        D_Ey.fill(0.0f);
-        D_Ez.fill(0.0f);
-
-        Hx.fill(0.0f);
-        Hy.fill(0.0f);
-        Hz.fill(0.0f);
-
-        Ex.fill(0.0f);
-        Ey.fill(0.0f);
-        Ez.fill(0.0f);
-
-        delta_t = deltaT;
-        delta_x = deltaX;
-        delta_y = deltaY;
-        delta_z = deltaZ;
-    }
-
-    SolidArray3d mu_Hx;
-    SolidArray3d mu_Hy;
-    SolidArray3d mu_Hz;
-    SolidArray3d sigma_Hx;
-    SolidArray3d sigma_Hy;
-    SolidArray3d sigma_Hz;
-
-    SolidArray3d epsilon_Ex;
-    SolidArray3d epsilon_Ey;
-    SolidArray3d epsilon_Ez;
-    SolidArray3d sigma_Ex;
-    SolidArray3d sigma_Ey;
-    SolidArray3d sigma_Ez;
-
-    //Calculation vars
-    SolidArray3d D_Hx;
-    SolidArray3d D_Hy;
-    SolidArray3d D_Hz;
-
-    SolidArray3d C_Ex;
-    SolidArray3d C_Ey;
-    SolidArray3d C_Ez;
-
-    SolidArray3d D_Ex;
-    SolidArray3d D_Ey;
-    SolidArray3d D_Ez;
-
-    float delta_x;
-    float delta_y;
-    float delta_z;
-    float delta_t;
-
-    SolidArray3d Hx;
-    SolidArray3d Hy;
-    SolidArray3d Hz;
-
-    SolidArray3d Ex;
-    SolidArray3d Ey;
-    SolidArray3d Ez;
+    ArrayType D_Hx;
+    ArrayType D_Hy;
+    ArrayType D_Hz;
+    ArrayType C_Ex;
+    ArrayType C_Ey;
+    ArrayType C_Ez;
+    ArrayType D_Ex;
+    ArrayType D_Ey;
+    ArrayType D_Ez;
 };
