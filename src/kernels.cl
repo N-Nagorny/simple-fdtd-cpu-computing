@@ -55,7 +55,7 @@ __kernel void calcH(int nx, int ny, int nz, float delta_x, float delta_y, float 
     int idx001 = ix * ny * nz + iy * nz + (iz + 1);
     int idx100 = (ix + 1) * ny * nz + iy * nz + iz;
 
-        Hx[idx] = Hx[idx] - D_Hx[idx] * ((Ez[idx010] - Ez[idx]) / delta_y -
+        Hx[idx] -= D_Hx[idx] * ((Ez[idx010] - Ez[idx]) / delta_y -
                             (Ey[idx001] - Ey[idx]) / delta_z);
 
         Hy[idx] -= D_Hy[idx] * ((Ex[idx001] - Ex[idx]) / delta_z -
