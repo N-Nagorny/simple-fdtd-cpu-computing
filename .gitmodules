@@ -6,4 +6,4 @@
 	url = git@github.com:Unidata/netcdf-cxx4.git
 [submodule "EasyCL"]
 	path = EasyCL
-	url = https://github.com/hughperkins/EasyCL.git
+	url = git@github.com:/rvlm/EasyCL.git
