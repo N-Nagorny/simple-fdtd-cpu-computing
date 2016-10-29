@@ -74,7 +74,7 @@ __kernel void rescueField(int ix, int iy, int iz,
                           __global float *Ez,
                           __global float *prevE) {
     int idx = ix * ny * nz + iy * nz + iz;
-    *prevE = Ez[idx];
+    prevE[0] = Ez[idx];
 }
 
 __kernel void updateField(int ix, int iy, int iz,
@@ -92,7 +92,7 @@ __kernel void updateField(int ix, int iy, int iz,
     int idx010 = ix * ny * nz + (iy - 1) * nz + iz;
     int idx100 = (ix - 1) * ny * nz + iy * nz + iz;
 
-    Ez[idx] = C * (*prevE) + D * ((Hy[idx] - Hy[idx100]) / delta_x -
+    Ez[idx] = C * (prevE[0]) + D * ((Hy[idx] - Hy[idx100]) / delta_x -
                                      (Hx[idx] - Hx[idx010]) / delta_y +
                                      voltage / (R * delta_x * delta_y));
 }

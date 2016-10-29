@@ -34,7 +34,7 @@ void dumpImage(std::string const& filename, YeeGrid& grid) {
              ((ny/2 - 3) <= iy && iy <= (ny/2 + 3)) )
             continue;
 
-        float curAbs = std::abs(grid.Ez.at(ix, iy, z0));
+        float curAbs = std::abs(grid.Ez.at(ix, z0, iy));
         if (curAbs > maxEx)
             maxEx = curAbs;
     }
@@ -47,7 +47,7 @@ void dumpImage(std::string const& filename, YeeGrid& grid) {
     char color[3];
     for (int iy = 0; iy < ny; ++iy)
     for (int ix = 0; ix < nx; ++ix) {
-        float val  = grid.Ez.at(ix, iy, z0);
+        float val  = grid.Ez.at(ix, z0, iy);
         unsigned blue = 0;
         unsigned red  = 0;
         if (val >= 0)
@@ -114,23 +114,39 @@ int cpu_main() {
     rsource.calcCoefs(grid);
 
     float time = 0;
-    for (int iter = 0; iter < 300; ++iter) {
-
-        std::cout << "Rocking iteration #" << iter << std::endl;
-        std::cout << "calcH_time: "
-                  << measure<std::chrono::milliseconds>::execution([&grid]() {calcH(grid);}) << std::endl;
-
+    int Niter = 600;
+    std::cout << "Time, ns" << '\t' << "(10.0, 0.0, 0.0)" <<
+                               '\t' << "(10.0, 0.0, -25.0)" <<
+                               '\t' << "(10.0, 0.0, -50.0)" <<
+                               '\t' << "(20.0, 0.0, 0.0)" <<
+                               '\t' << "(20.0, 0.0, -25.0)" <<
+                               '\t' << "(20.0, 0.0, -50.0)" <<
+                               '\t' << "(-25.0, 0.0, -25.0)" <<
+                               '\t' << "(30.0, 0.0, 0.0)" <<
+                              '\t' << "(30.0, 0.0, -50.0)" <<
+                               '\t' << "(40.0, 0.0, 0.0)" <<
+                               '\t' << "(40.0, 0.0, -25.0)" <<
+                               '\t' << "(40.0, 0.0, -50.0)" << std::endl;
+    for (int iter = 0; iter < Niter; ++iter) {
+        calcH(grid);
         rsource.resqueFields(grid);
-        std::cout << "calcE_time: "
-                  << measure<std::chrono::milliseconds>::execution([&grid]() {calcE(grid);}) << std::endl;
-
+        calcE(grid);
         rsource.updateFields(grid, voltage(time));
 
-        std::string filename = str(boost::format("field.%03d_%03d.ppm") % nx % iter);
-        std::cout << "VAL: " << grid.Ez.at(x0 + 10, y0, z0) << std::endl;
-
-        dumpImage(filename, grid);
         time = dt*iter;
+
+        std::cout << time * 10e9 << '\t' << grid.Ez.at(x0 + 4, y0, z0) <<
+                                    '\t' << grid.Ez.at(x0 + 4, y0, z0 - 10) <<
+                                    '\t' << grid.Ez.at(x0 + 4, y0, z0 - 20) <<
+                                    '\t' << grid.Ez.at(x0 + 8, y0, z0) <<
+                                    '\t' << grid.Ez.at(x0 + 8, y0, z0 - 10) <<
+                                    '\t' << grid.Ez.at(x0 + 8, y0, z0 - 20) <<
+                                    '\t' << grid.Ez.at(x0 - 10, y0, z0 - 10) <<
+                                    '\t' << grid.Ez.at(x0 + 12, y0, z0) <<
+                                    '\t' << grid.Ez.at(x0 + 12, y0, z0 - 20) <<
+                                    '\t' << grid.Ez.at(x0 + 16, y0, z0) <<
+                                    '\t' << grid.Ez.at(x0 + 16, y0, z0 - 10) <<
+                                    '\t' << grid.Ez.at(x0 + 16, y0, z0 - 20) << std::endl;
     }
 
     return 0;
@@ -210,7 +226,7 @@ int gpu_main() {
 
 
     float time = 0;
-    for (int iter = 0; iter < 300; ++iter) {
+    for (int iter = 0; iter < 60; ++iter) {
         time = iter * dt;
 
 
