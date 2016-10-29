@@ -6,6 +6,7 @@
 #include <boost/format.hpp>
 #include "EasyCL.h"
 #include <chrono>
+#include <cmath>
 
 const float c = 299792458.0f;
 const float pi = 3.14159265358;
