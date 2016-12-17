@@ -8,6 +8,8 @@
 #include <chrono>
 #include <cmath>
 
+#include <utility>
+
 const float c = 299792458.0f;
 const float pi = 3.14159265358;
 
@@ -81,6 +83,24 @@ float voltage(float time) {
     return std::sin(omega*time) * 1000;
 }
 
+std::vector <std::pair <double, double> > readFloatsFromFile(std::string fileName) {
+    std::ifstream source(fileName, std::ifstream::in);
+
+    std::vector <std::pair <double, double> > result;
+
+    for (std::string line; std::getline(source, line); ) {
+        std::istringstream in(line);      //make a stream for the line itself
+        double value, time;
+        in >> time >> value;
+        result.push_back(std::make_pair(time, value));
+    }
+
+    return result;
+    /*for (auto pair: vec) {
+         std::cout << pair.first << ' ' << pair.second << std::endl;
+    }*/
+}
+
 template<typename TimeT = std::chrono::milliseconds>
 struct measure
 {
@@ -103,7 +123,7 @@ struct measure
 int cpu_main() {
     YeeGrid grid(nx, ny, nz, dt, dx, dy, dz);
     setupGrid(grid);
-    calcCoefs(grid);
+    //calcCoefs(grid);
 
     //dumpImage("test.ppm", grid);
 
@@ -111,12 +131,12 @@ int cpu_main() {
     int y0 = ny / 2;
     int z0 = nz / 2;
     ResistiveSource rsource(x0, y0, z0, 10.0f);
-    rsource.calcCoefs(grid);
+    //rsource.calcCoefs(grid);
 
     float time = 0;
     int Niter = 600;
     std::cout << "Time, ns" << '\t' << "(10.0, 0.0, 0.0)" <<
-                               '\t' << "(10.0, 0.0, -25.0)" <<
+                               /*'\t' << "(10.0, 0.0, -25.0)" <<
                                '\t' << "(10.0, 0.0, -50.0)" <<
                                '\t' << "(20.0, 0.0, 0.0)" <<
                                '\t' << "(20.0, 0.0, -25.0)" <<
@@ -125,18 +145,24 @@ int cpu_main() {
                                '\t' << "(30.0, 0.0, 0.0)" <<
                               '\t' << "(30.0, 0.0, -50.0)" <<
                                '\t' << "(40.0, 0.0, 0.0)" <<
-                               '\t' << "(40.0, 0.0, -25.0)" <<
+                               '\t' << "(40.0, 0.0, -25.0)" <<*/
                                '\t' << "(40.0, 0.0, -50.0)" << std::endl;
-    for (int iter = 0; iter < Niter; ++iter) {
+    auto vec = readFloatsFromFile("jRXX5zVr.txt");
+    for (auto iter = vec.begin(); iter < vec.end()-1; ++iter) {
+        auto time  = iter->first;
+        auto value = iter->second;
+        double delta_t = ((iter + 1)->first - time) * 10e-9;
+        grid.delta_t = delta_t;
+        calcCoefs(grid);
+        rsource.calcCoefs(grid);
+
         calcH(grid);
         rsource.resqueFields(grid);
         calcE(grid);
-        rsource.updateFields(grid, voltage(time));
+        rsource.updateFields(grid, value * 1e9);
 
-        time = dt*iter;
-
-        std::cout << time * 10e9 << '\t' << grid.Ez.at(x0 + 4, y0, z0) <<
-                                    '\t' << grid.Ez.at(x0 + 4, y0, z0 - 10) <<
+        std::cout << time << '\t' << grid.Ez.at(x0 + 4, y0, z0) <<
+                                    /*'\t' << grid.Ez.at(x0 + 4, y0, z0 - 10) <<
                                     '\t' << grid.Ez.at(x0 + 4, y0, z0 - 20) <<
                                     '\t' << grid.Ez.at(x0 + 8, y0, z0) <<
                                     '\t' << grid.Ez.at(x0 + 8, y0, z0 - 10) <<
@@ -145,7 +171,7 @@ int cpu_main() {
                                     '\t' << grid.Ez.at(x0 + 12, y0, z0) <<
                                     '\t' << grid.Ez.at(x0 + 12, y0, z0 - 20) <<
                                     '\t' << grid.Ez.at(x0 + 16, y0, z0) <<
-                                    '\t' << grid.Ez.at(x0 + 16, y0, z0 - 10) <<
+                                    '\t' << grid.Ez.at(x0 + 16, y0, z0 - 10) <<*/
                                     '\t' << grid.Ez.at(x0 + 16, y0, z0 - 20) << std::endl;
     }
 
