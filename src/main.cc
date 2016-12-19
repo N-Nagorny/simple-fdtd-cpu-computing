@@ -22,7 +22,7 @@ const float omega  = 2 * pi * c / lambda;
 const float dx = lambda / nl;
 const float dy = dx;
 const float dz = dx;
-const float dt = 0.5/(c * std::sqrt(1/(dx*dx) + 1/(dy*dy) + 1/(dz*dz)));
+const float dt = 0.1/(c * std::sqrt(1/(dx*dx) + 1/(dy*dy) + 1/(dz*dz)));
 
 void dumpImage(std::string const& filename, YeeGrid& grid) {
     int nx = grid.Ez.getCountX();
@@ -64,19 +64,33 @@ void dumpImage(std::string const& filename, YeeGrid& grid) {
     }
 }
 
+void SetCube(YeeGrid& grid, float eps, float sigmaE, int Imin, int Imax, int Jmin, int Jmax, int Kmin, int Kmax)
+{
+    long int i, j, k;
+
+    for(i=Imin;i<Imax;i++)
+    {
+        for(j=Jmin;j<Jmax;j++)
+        {
+            for(k=Kmin;k<Kmax;k++)
+            {
+                grid.epsilon_Ex.at(i, k, k) = eps;
+                grid.epsilon_Ey.at(i, k, k) = eps;
+                grid.epsilon_Ez.at(i, k, k) = eps;
+                grid.sigma_Ex.at(i, k, k) = sigmaE;
+                grid.sigma_Ey.at(i, k, k) = sigmaE;
+                grid.sigma_Ey.at(i, k, k) = sigmaE;
+            }
+        }
+    }
+}
+
 void setupGrid(YeeGrid& grid) {
     int x0 = nx / 2;
     int y0 = ny / 2;
     int z0 = nz / 2;
-
-    float epsilonAntenna = 10;
-    float sigmaAntenna = 10000;
-    for (int i = 0; i < nl; ++i) {
-        grid.epsilon_Ez.at(x0, y0, z0 + i) = epsilonAntenna;
-        grid.epsilon_Ez.at(x0, y0, z0 - i) = epsilonAntenna;
-        grid.sigma_Ez.at(x0, y0, z0 + i) = sigmaAntenna;
-        grid.sigma_Ez.at(x0, y0, z0 - i) = sigmaAntenna;
-    }
+    const int w = 3;
+    SetCube(grid, 10000, 10, x0-5, x0+5, y0-5, y0+5, z0-20, z0 + 20);
 }
 
 float voltage(float time) {
@@ -336,7 +350,7 @@ int gpu_main() {
     //wEz->copyToDevice();
 
     std::string filename = str(boost::format("CLfield.%03d_%03d.ppm") % nx % iter);
-    std::cout << "VAL: " << grid.Ez.at(x0 + 10, y0, z0) << std::endl;
+    std::cout << time << '\t' << grid.Ez.at(x0 + 10, y0, z0) << std::endl;
     dumpImage(filename, grid);
 
     }
