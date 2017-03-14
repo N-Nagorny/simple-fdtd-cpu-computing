@@ -16,13 +16,10 @@ const float pi = 3.14159265358;
 int nx;
 int ny;
 int nz;
-const int nl = 20;
-const float lambda = 0.05;
-const float omega  = 2 * pi * c / lambda;
-const float dx = lambda / nl;
-const float dy = dx;
-const float dz = dx;
-const float dt = 0.1/(c * std::sqrt(1/(dx*dx) + 1/(dy*dy) + 1/(dz*dz)));
+const float dx = 0.01;
+const float dy = 0.01;
+const float dz = 0.01;
+const float courant_dt = 0.1/(c * std::sqrt(1/(dx*dx) + 1/(dy*dy) + 1/(dz*dz)));
 
 void dumpImage(std::string const& filename, YeeGrid& grid) {
     int nx = grid.Ez.getCountX();
@@ -90,12 +87,12 @@ void setupGrid(YeeGrid& grid) {
     int y0 = ny / 2;
     int z0 = nz / 2;
     const int w = 3;
-    SetCube(grid, 10000, 10, x0-5, x0+5, y0-5, y0+5, z0-20, z0 + 20);
+    SetCube(grid, eps0, 10, x0-5, x0+5, y0-5, y0+5, z0-20, z0 + 20);
 }
 
-float voltage(float time) {
-    return std::sin(omega*time) * 1000;
-}
+//float voltage(float time) {
+//    return std::sin(omega*time) * 1000;
+//}
 
 std::vector <std::pair <double, double> > readFloatsFromFile(std::string fileName) {
     std::ifstream source(fileName, std::ifstream::in);
@@ -110,9 +107,6 @@ std::vector <std::pair <double, double> > readFloatsFromFile(std::string fileNam
     }
 
     return result;
-    /*for (auto pair: vec) {
-         std::cout << pair.first << ' ' << pair.second << std::endl;
-    }*/
 }
 
 template<typename TimeT = std::chrono::milliseconds>
@@ -135,7 +129,9 @@ struct measure
 
 
 int cpu_main() {
-    YeeGrid grid(nx, ny, nz, dt, dx, dy, dz);
+    std::cout << "Courant delta_t = " << courant_dt << std::endl;
+
+    YeeGrid grid(nx, ny, nz, courant_dt, dx, dy, dz);
     setupGrid(grid);
     //calcCoefs(grid);
 
@@ -149,7 +145,7 @@ int cpu_main() {
 
     float time = 0;
     int Niter = 600;
-    std::cout << "Time, ns" << '\t' << "(10.0, 0.0, 0.0)" <<
+    std::cout << "Time, ns" << '\t' << "Probe1" <<
                                /*'\t' << "(10.0, 0.0, -25.0)" <<
                                '\t' << "(10.0, 0.0, -50.0)" <<
                                '\t' << "(20.0, 0.0, 0.0)" <<
@@ -160,8 +156,8 @@ int cpu_main() {
                               '\t' << "(30.0, 0.0, -50.0)" <<
                                '\t' << "(40.0, 0.0, 0.0)" <<
                                '\t' << "(40.0, 0.0, -25.0)" <<*/
-                               '\t' << "(40.0, 0.0, -50.0)" << std::endl;
-    auto vec = readFloatsFromFile("jRXX5zVr.txt");
+                               '\t' << "Probe2" << std::endl;
+    auto vec = readFloatsFromFile("gauss.txt");
     for (auto iter = vec.begin(); iter < vec.end()-1; ++iter) {
         auto time  = iter->first;
         auto value = iter->second;
@@ -173,9 +169,9 @@ int cpu_main() {
         calcH(grid);
         rsource.resqueFields(grid);
         calcE(grid);
-        rsource.updateFields(grid, value * 1e9);
+        rsource.updateFields(grid, value);
 
-        std::cout << time << '\t' << grid.Ez.at(x0 + 4, y0, z0) <<
+        std::cout << time << '\t' << grid.Ez.at(x0 + 8, y0, z0) <<
                                     /*'\t' << grid.Ez.at(x0 + 4, y0, z0 - 10) <<
                                     '\t' << grid.Ez.at(x0 + 4, y0, z0 - 20) <<
                                     '\t' << grid.Ez.at(x0 + 8, y0, z0) <<
@@ -186,13 +182,14 @@ int cpu_main() {
                                     '\t' << grid.Ez.at(x0 + 12, y0, z0 - 20) <<
                                     '\t' << grid.Ez.at(x0 + 16, y0, z0) <<
                                     '\t' << grid.Ez.at(x0 + 16, y0, z0 - 10) <<*/
-                                    '\t' << grid.Ez.at(x0 + 16, y0, z0 - 20) << std::endl;
+                                    '\t' << grid.Ez.at(x0 + 16, y0, z0) << std::endl;
     }
 
     return 0;
 }
 
 int gpu_main() {
+    /*
     YeeGrid grid(nx, ny, nz, dt, dx, dy, dz);
     setupGrid(grid);
     calcCoefs(grid);
@@ -358,7 +355,7 @@ int gpu_main() {
     delete kernelH;
     delete kernelE;
 
-    return 0;
+    return 0;*/
 }
 
 int main(int argc, char *argv[]) {

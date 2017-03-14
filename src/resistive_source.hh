@@ -16,7 +16,7 @@ public:
         float delta_x = grid.delta_x;
         float delta_y = grid.delta_y;
         float delta_z = grid.delta_z;
-        float epsilon = grid.epsilon_Ez.at(mPosX, mPosY, mPosZ);
+        float epsilon = eps0;
         float subexpr = delta_t * delta_z /
                         (2 * mResistance * delta_x * delta_y);
 
