@@ -3,10 +3,8 @@
 #include <boost/format.hpp>
 #include <boost/multiprecision/mpfr.hpp>
 
-
 #include "rvlm/core/Constants.hh"
 
-#include "read_grid.hh"
 #include "calc_field.hh"
 #include "resistive_source.hh"
 

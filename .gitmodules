@@ -1,9 +1,3 @@
 [submodule "rvlm-common"]
 	path = rvlm-common
 	url = git@github.com:rvlm/rvlm-common.git
-[submodule "netcdf-cxx4"]
-	path = netcdf-cxx4
-	url = git@github.com:Unidata/netcdf-cxx4.git
-[submodule "EasyCL"]
-	path = EasyCL
-	url = git@github.com:/rvlm/EasyCL.git
