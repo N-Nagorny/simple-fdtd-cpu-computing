@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
 
     Time<float> time = 0 * boost::units::si::second;
     int iter = 0;
-    while (true) {
+    while (iter < 100) {
         std::cout << "(1) Rocking iteration #" << iter << std::endl;
         calcH(grid1);
 

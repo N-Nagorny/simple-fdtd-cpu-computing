@@ -54,7 +54,9 @@ public:
     Length<ValueType>
         delta_x,
         delta_y,
-        delta_z,
+        delta_z;
+
+    Time<ValueType>
         delta_t;
 
     ArrayType<MagneticIntensity<T>> Hx, Hy, Hz;
@@ -67,7 +69,5 @@ public:
     ArrayType<MagneticCurlCoefficient<T>> D_Hx, D_Hy, D_Hz;
     ArrayType<ElectricCurlCoefficient<T>> D_Ex, D_Ey, D_Ez;
 
-    ArrayType<T> C_Ex;
-    ArrayType<T> C_Ey;
-    ArrayType<T> C_Ez;
+    ArrayType<Dimensionless<T>> C_Ex, C_Ey, C_Ez;
 };

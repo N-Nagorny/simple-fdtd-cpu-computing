@@ -1,9 +1,12 @@
 #include "rvlm/core/SolidArray3d.hh"
 #include "yee_grid.hh"
 
-template <typename CurlCoefficientT, typename TimeT, typename PermittivityT, typename ConductivityT>
+template <typename CurlCoefficientT,
+          typename TimeT,
+          typename PermittivityT,
+          typename ConductivityT>
 void calcD(rvlm::core::SolidArray3d<CurlCoefficientT>& D,
-           TimeT deltaT,
+           TimeT const& deltaT,
            rvlm::core::SolidArray3d<PermittivityT> const& perm,
            rvlm::core::SolidArray3d<ConductivityT> const& sigma) {
 
@@ -14,7 +17,9 @@ void calcD(rvlm::core::SolidArray3d<CurlCoefficientT>& D,
         auto  curPerm  = perm.at(ix, iy, iz);
         auto  curSigma = sigma.at(ix, iy, iz);
         auto  subexpr  = deltaT / curPerm;
-        curD = subexpr / (1 + curSigma * subexpr/2);
+
+        using T = decltype((curSigma*subexpr) / (curSigma*subexpr));
+        curD = subexpr / ((T)1 + curSigma * subexpr/(T)2);
     }
 }
 
@@ -30,8 +35,11 @@ void calcC(rvlm::core::SolidArray3d<CurlCoefficientT>& C,
         auto& curC     = C.at(ix, iy, iz);
         auto  curPerm  = perm.at(ix, iy, iz);
         auto  curSigma = sigma.at(ix, iy, iz);
-        auto  subexpr  = curSigma * deltaT / (2 * curPerm);
-        curC = (1 - subexpr) / (1 + subexpr);
+
+        using T = decltype(deltaT/deltaT);
+
+        auto  subexpr  = curSigma * deltaT / ((T)2 * curPerm);
+        curC = ((T)1 - subexpr) / ((T)1 + subexpr);
     }
 }
 
