@@ -3,7 +3,10 @@
 #include <boost/format.hpp>
 #include <boost/multiprecision/mpfr.hpp>
 
-#include "rvlm/core/Constants.hh"
+#include <boost/units/cmath.hpp>
+#include "Dimensions.hh"
+
+#include "Constants.hh"
 
 #include "calc_field.hh"
 #include "resistive_source.hh"
@@ -27,12 +30,13 @@ typedef rvlm::core::Constants<float> Const;
     const int ny = 129;
     const int nz = 129;
     const int nl = 20;
-    const float lambda = 0.05;
-    const float omega  = 2 * Const::PI() * Const::C() / lambda;
-    const float dx = lambda / nl;
-    const float dy = dx;
-    const float dz = dx;
-    const float dt = 0.5/(Const::C() * std::sqrt(1/(dx*dx) + 1/(dy*dy) + 1/(dz*dz)));
+    const Length<float> lambda = 0.05f * boost::units::si::meter;
+    const boost::units::quantity<boost::units::si::angular_velocity, float> omega  = 2 * Const::PI() * boost::units::si::radian * Const::C() / lambda;
+    const Length<float> dx = lambda / (float)nl;
+    const Length<float> dy = dx;
+    const Length<float> dz = dx;
+    // TODO: FIx it.
+    const Time<float> dt = (0.5f * boost::units::si::si_dimensionless)/(Const::C() / (1.0f * boost::units::si::meter)); // * boost::units::sqrt(1.0f/(dx*dx) + 1.0f/(dy*dy) + 1.0f/(dz*dz)));
 
 template<typename valueType>
 void dumpImage(std::string const& filename, YeeGrid<valueType> const& grid) {
@@ -170,8 +174,8 @@ void setupGrid(YeeGrid<valueType>& grid) {
     int y0 = ny / 2;
     int z0 = nz / 2;
 
-    valueType epsilonAntenna = 10;
-    valueType sigmaAntenna   = 10000;
+    Permittivity<valueType> epsilonAntenna = rvlm::core::Constants<valueType>::EPS_0() * (valueType)10;
+    ElectricConductivity<valueType> sigmaAntenna = ElectricConductivity<valueType>::from_value(10000);
     for (int i = 0; i < nl; ++i) {
         grid.epsilon_Ez.at(x0, y0, z0 + i) = epsilonAntenna;
         grid.epsilon_Ez.at(x0, y0, z0 - i) = epsilonAntenna;
@@ -180,8 +184,9 @@ void setupGrid(YeeGrid<valueType>& grid) {
     }
 }
 
-float voltage(float time) {
-    return std::sin(omega*time) * 1000;
+template <typename T>
+ElectricPotential<T> voltage(Time<T> time) {
+    return std::sin(omega*time) * 1000.0f * boost::units::si::volt;
 }
 
 int main(int argc, char *argv[]) {
@@ -192,41 +197,41 @@ int main(int argc, char *argv[]) {
     setupGrid(grid1);
     calcCoefs(grid1);
 
-    YeeGridF grid2(nx, ny, nz, dt, dx, dy, dz);
-    setupGrid(grid2);
-    calcCoefs(grid2);
+    //YeeGridF grid2(nx, ny, nz, dt, dx, dy, dz);
+    //setupGrid(grid2);
+    //calcCoefs(grid2);
 
     int x0 = nx / 2;
     int y0 = ny / 2;
     int z0 = nz / 2;
-    ResistiveSource<float> rsource1(x0, y0, z0, 10);
-    rsource1.calcCoefs(grid1);
+    //ResistiveSource<float> rsource1(x0, y0, z0, 10 * boost::units::si::ohm);
+    //rsource1.calcCoefs(grid1);
 
-    ResistiveSourceF rsource2(x0, y0, z0, 10);
-    rsource2.calcCoefs(grid2);
+    //ResistiveSourceF rsource2(x0, y0, z0, 10 * boost::units::si::ohm);
+    //rsource2.calcCoefs(grid2);
 
-    float time = 0;
+    Time<float> time = 0 * boost::units::si::second;
     int iter = 0;
     while (true) {
         std::cout << "(1) Rocking iteration #" << iter << std::endl;
         calcH(grid1);
 
-        rsource1.resqueFields(grid1);
+        //rsource1.resqueFields(grid1);
         calcE(grid1);
-        rsource1.updateFields(grid1, voltage(time));
+        //rsource1.updateFields(grid1, voltage<float>(time));
 
-        std::cout << "(2) Rocking iteration #" << iter << std::endl;
-        calcH(grid2);
+        //std::cout << "(2) Rocking iteration #" << iter << std::endl;
+        //calcH(grid2);
 
-        rsource2.resqueFields(grid2);
-        calcE(grid2);
-        rsource2.updateFields(grid2, voltage(time));
+        //rsource2.resqueFields(grid2);
+        //calcE(grid2);
+        //rsource2.updateFields(grid2, voltage<float100>(time));
 
         std::string fn = str(boost::format("fdtd_diff_%02d.ppm") % iter);
-        dumpDifference(fn, grid1, grid2);
+        //dumpDifference(fn, grid1, grid2);
 
         iter++;
-        time = dt*iter;
+        time = dt*(float)iter;
     }
 
     return 0;

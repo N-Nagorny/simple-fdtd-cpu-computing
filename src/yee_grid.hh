@@ -1,85 +1,73 @@
 #pragma once
-#include "rvlm/core/Constants.hh"
 #include "rvlm/core/SolidArray3d.hh"
+#include "Constants.hh"
+#include "Dimensions.hh"
 
-template <typename valueType>
+template <typename T>
 class YeeGrid {
 public:
 
-    using Const = rvlm::core::Constants<valueType>;
+    using Const = rvlm::core::Constants<T>;
 
-    typedef valueType ValueType;
-    typedef rvlm::core::SolidArray3d<valueType> ArrayType;
+    using ValueType = T;
+
+    template <typename U>
+    using ArrayType = rvlm::core::SolidArray3d<U>;
 
 public:
     YeeGrid(int nx, int ny, int nz,
-            ValueType dt, ValueType dx, ValueType dy, ValueType dz)
+            Time<T> dt, Length<T> dx, Length<T> dy, Length<T> dz)
         : delta_t(dt)
         , delta_x(dx)
         , delta_y(dy)
         , delta_z(dz)
-        , Hx         (nx, ny, nz,   0)
-        , Hy         (nx, ny, nz,   0)
-        , Hz         (nx, ny, nz,   0)
-        , Ex         (nx, ny, nz,   0)
-        , Ey         (nx, ny, nz,   0)
-        , Ez         (nx, ny, nz,   0)
+        , Hx         (nx, ny, nz,   MagneticIntensity<T>::from_value(0))
+        , Hy         (nx, ny, nz,   MagneticIntensity<T>::from_value(0))
+        , Hz         (nx, ny, nz,   MagneticIntensity<T>::from_value(0))
+        , Ex         (nx, ny, nz,   ElectricIntensity<T>::from_value(0))
+        , Ey         (nx, ny, nz,   ElectricIntensity<T>::from_value(0))
+        , Ez         (nx, ny, nz,   ElectricIntensity<T>::from_value(0))
         , mu_Hx      (nx, ny, nz,   Const::MU_0())
         , mu_Hy      (nx, ny, nz,   Const::MU_0())
         , mu_Hz      (nx, ny, nz,   Const::MU_0())
         , epsilon_Ex (nx, ny, nz,   Const::EPS_0())
         , epsilon_Ey (nx, ny, nz,   Const::EPS_0())
         , epsilon_Ez (nx, ny, nz,   Const::EPS_0())
-        , sigma_Hx   (nx, ny, nz,   0)
-        , sigma_Hy   (nx, ny, nz,   0)
-        , sigma_Hz   (nx, ny, nz,   0)
-        , sigma_Ex   (nx, ny, nz,   0)
-        , sigma_Ey   (nx, ny, nz,   0)
-        , sigma_Ez   (nx, ny, nz,   0)
-        , D_Hx       (nx, ny, nz,   0)
-        , D_Hy       (nx, ny, nz,   0)
-        , D_Hz       (nx, ny, nz,   0)
+        , sigma_Hx   (nx, ny, nz,   MagneticLoss<T>::from_value(0))
+        , sigma_Hy   (nx, ny, nz,   MagneticLoss<T>::from_value(0))
+        , sigma_Hz   (nx, ny, nz,   MagneticLoss<T>::from_value(0))
+        , sigma_Ex   (nx, ny, nz,   ElectricConductivity<T>::from_value(0))
+        , sigma_Ey   (nx, ny, nz,   ElectricConductivity<T>::from_value(0))
+        , sigma_Ez   (nx, ny, nz,   ElectricConductivity<T>::from_value(0))
+        , D_Hx       (nx, ny, nz,   MagneticCurlCoefficient<T>::from_value(0))
+        , D_Hy       (nx, ny, nz,   MagneticCurlCoefficient<T>::from_value(0))
+        , D_Hz       (nx, ny, nz,   MagneticCurlCoefficient<T>::from_value(0))
         , C_Ex       (nx, ny, nz,   0)
         , C_Ey       (nx, ny, nz,   0)
         , C_Ez       (nx, ny, nz,   0)
-        , D_Ex       (nx, ny, nz,   0)
-        , D_Ey       (nx, ny, nz,   0)
-        , D_Ez       (nx, ny, nz,   0)
+        , D_Ex       (nx, ny, nz,   ElectricCurlCoefficient<T>())
+        , D_Ey       (nx, ny, nz,   ElectricCurlCoefficient<T>())
+        , D_Ez       (nx, ny, nz,   ElectricCurlCoefficient<T>())
     {}
 
 public:
-    ValueType delta_x;
-    ValueType delta_y;
-    ValueType delta_z;
-    ValueType delta_t;
+    Length<ValueType>
+        delta_x,
+        delta_y,
+        delta_z,
+        delta_t;
 
-    ArrayType Hx;
-    ArrayType Hy;
-    ArrayType Hz;
-    ArrayType Ex;
-    ArrayType Ey;
-    ArrayType Ez;
+    ArrayType<MagneticIntensity<T>> Hx, Hy, Hz;
+    ArrayType<ElectricIntensity<T>> Ex, Ey, Ez;
 
-    ArrayType mu_Hx;
-    ArrayType mu_Hy;
-    ArrayType mu_Hz;
-    ArrayType epsilon_Ex;
-    ArrayType epsilon_Ey;
-    ArrayType epsilon_Ez;
-    ArrayType sigma_Hx;
-    ArrayType sigma_Hy;
-    ArrayType sigma_Hz;
-    ArrayType sigma_Ex;
-    ArrayType sigma_Ey;
-    ArrayType sigma_Ez;
+    ArrayType<Permeability<T>> mu_Hx, mu_Hy, mu_Hz;
+    ArrayType<Permittivity<T>> epsilon_Ex, epsilon_Ey, epsilon_Ez;
+    ArrayType<ElectricConductivity<T>> sigma_Ex, sigma_Ey, sigma_Ez;
+    ArrayType<MagneticLoss<T>> sigma_Hx, sigma_Hy, sigma_Hz;
+    ArrayType<MagneticCurlCoefficient<T>> D_Hx, D_Hy, D_Hz;
+    ArrayType<ElectricCurlCoefficient<T>> D_Ex, D_Ey, D_Ez;
 
-    ArrayType D_Hx;
-    ArrayType D_Hy;
-    ArrayType D_Hz;
-    ArrayType C_Ex;
-    ArrayType C_Ey;
-    ArrayType C_Ez;
-    ArrayType D_Ex;
-    ArrayType D_Ey;
-    ArrayType D_Ez;
+    ArrayType<T> C_Ex;
+    ArrayType<T> C_Ey;
+    ArrayType<T> C_Ez;
 };

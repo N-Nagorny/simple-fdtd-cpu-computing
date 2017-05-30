@@ -1,43 +1,48 @@
 #pragma once
 #include "yee_grid.hh"
-#include "rvlm/core/Constants.hh"
+#include "Constants.hh"
+#include "Dimensions.hh"
 
-template <typename valueType>
+template <typename T>
 class ResistiveSource {
 public:
-    using Const = rvlm::core::Constants<valueType>;
+    using Const = rvlm::core::Constants<T>;
 
-    typedef valueType                           ValueType;
-    typedef rvlm::core::SolidArray3d<valueType> ArrayType;
+    typedef T                           ValueType;
+    typedef rvlm::core::SolidArray3d<T> ArrayType;
     typedef typename ArrayType::IndexType       IndexType;
 
 public:
 
-    ResistiveSource(IndexType ix, IndexType iy, IndexType iz, ValueType r) {
+    ResistiveSource(IndexType ix, IndexType iy, IndexType iz, Resistance<T> r) {
         mPosX = ix;
         mPosY = iy;
         mPosZ = iz;
         mResistance  = r;
     }
 
-    void calcCoefs(YeeGrid<ValueType> const& grid) {
-        ValueType delta_t = grid.delta_t;
-        ValueType delta_x = grid.delta_x;
-        ValueType delta_y = grid.delta_y;
-        ValueType delta_z = grid.delta_z;
-        ValueType epsilon = grid.epsilon_Ez.at(mPosX, mPosY, mPosZ);
-        ValueType subexpr = delta_t * delta_z /
-                            (2 * mResistance * delta_x * delta_y);
+    void calcCoefs(YeeGrid<T> const& grid) {
+        auto const delta_t = grid.delta_t;
+        auto const delta_x = grid.delta_x;
+        auto const delta_y = grid.delta_y;
+        auto const delta_z = grid.delta_z;
+        auto const epsilon = grid.epsilon_Ez.at(mPosX, mPosY, mPosZ);
+        auto const sigmaE  = grid.sigma_Ez.at(mPosX, mPosY, mPosZ);
+        auto const subexpr = delta_t * delta_z * sigmaE /
+                            ((T)2 * mResistance * epsilon * delta_x * delta_y);
 
-        mCE = (1 - subexpr) / (1 + subexpr);
-        mDE = (delta_t / epsilon) / (1 + subexpr);
+        mCE = ((T)1 - subexpr) / ((T)1 + subexpr);
+
+        mDE = ElectricCurlCoefficient<T>();
+        // TODO: !!!
+        // mDE = (delta_t / epsilon) / ((T)1 + subexpr);
     }
 
-    void resqueFields(YeeGrid<ValueType> const& grid) {
+    void resqueFields(YeeGrid<T> const& grid) {
         mPrevE = grid.Ez.at(mPosX, mPosY, mPosZ);
     }
 
-    void updateFields(YeeGrid<ValueType>& grid, ValueType voltage) const {
+    void updateFields(YeeGrid<T>& grid, ElectricPotential<T> voltage) const {
         IndexType ix  = mPosX;
         IndexType iy  = mPosY;
         IndexType iz  = mPosZ;
@@ -57,11 +62,13 @@ public:
 
     ValueType getC() const { return mCE; }
     ValueType getD() const { return mDE; }
-    ValueType getResistance() const { return mResistance; }
+    Resistance<T> getResistance() const { return mResistance; }
 
 private:
     IndexType mPosX, mPosY, mPosZ;
-    ValueType mCE, mDE;
-    ValueType mResistance;
-    ValueType mPrevE;
+    T mCE;
+    ElectricCurlCoefficient<T> mDE;
+
+    Resistance<T> mResistance;
+    ElectricIntensity<ValueType> mPrevE;
 };
