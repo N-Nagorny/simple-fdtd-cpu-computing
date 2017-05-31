@@ -26,6 +26,32 @@ namespace core {
 
 typedef rvlm::core::Constants<float> Const;
 
+template <int N, typename Dim, typename System, typename Y>
+auto mypow(boost::units::quantity<boost::units::unit<Dim, System>, Y> const& x)
+      -> boost::units::quantity<boost::units::unit<typename boost::units::static_power<Dim, boost::units::static_rational<N>>::type, System>, Y>
+{
+    using namespace boost::units;
+
+    using NewDim = typename static_power<Dim, typename static_rational<N>::type>::type;
+    using NewUnit = unit<NewDim, System>;
+
+    using std::pow;
+    return quantity<NewUnit, Y>::from_value(pow(x.value(), N));
+}
+
+template <int N, int M, typename Dim, typename System, typename Y>
+auto mypow(boost::units::quantity<boost::units::unit<Dim, System>, Y> const& x)
+-> boost::units::quantity<boost::units::unit<typename boost::units::static_power<Dim, typename boost::units::static_rational<N,M>::type>::type, System>, Y>
+{
+    using namespace boost::units;
+
+    using NewDim = typename static_power<Dim, typename static_rational<N, M>::type>::type;
+    using NewUnit = unit<NewDim, System>;
+
+    using std::pow;
+    return quantity<NewUnit, Y>::from_value(pow(x.value(), (Y)N/M));
+}
+
     const int nx = 129;
     const int ny = 129;
     const int nz = 129;
@@ -36,7 +62,10 @@ typedef rvlm::core::Constants<float> Const;
     const Length<float> dy = dx;
     const Length<float> dz = dx;
     // TODO: FIx it.
-    const Time<float> dt = (0.5f * boost::units::si::si_dimensionless)/(Const::C() / (1.0f * boost::units::si::meter)); // * boost::units::sqrt(1.0f/(dx*dx) + 1.0f/(dy*dy) + 1.0f/(dz*dz)));
+    const Time<float> dt =
+        mypow<-1>(Const::C() * mypow<1,2>(
+            1.0f/(dx*dx) + 1.0f/(dy*dy) + 1.0f/(dz*dz))) *
+        boost::units::quantity<boost::units::si::dimensionless, float>(0.5f);
 
 template<typename valueType>
 void dumpImage(std::string const& filename, YeeGrid<valueType> const& grid) {
