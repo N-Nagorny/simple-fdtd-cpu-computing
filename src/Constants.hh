@@ -25,7 +25,7 @@ public:
      * Light's speed in vacuum (meter/second).
      * @see http://en.wikipedia.org/wiki/Speed_of_light
      */
-    static Velocity<T> C() { return (T)299792501 * boost::units::si::meter_per_second; }
+    static Velocity<T> C() { return T(299792501) * boost::units::si::meter_per_second; }
 
     /**
      * Electric constant or vacuum permittivity (farad/meter).

@@ -8,7 +8,9 @@ add_executable(fdtd
    src/calc_field.hh
    src/resistive_source.hh
    src/yee_grid.hh
-   src/main.cc src/Dimensions.hh)
+   src/Dimensions.hh
+   src/BoostUnitsHelpers.hh
+   src/main.cc)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
 

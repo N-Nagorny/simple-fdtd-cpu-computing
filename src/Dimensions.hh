@@ -6,7 +6,7 @@
 
 template <typename T>
 using Dimensionless =
-    typename boost::units::dimensionless_quantity<boost::units::si::system, T>::type;
+    boost::units::quantity<boost::units::si::dimensionless, T>;
 
 template <typename T>
 using Length = boost::units::quantity<boost::units::si::length, T>;

@@ -4,11 +4,10 @@
 #include <boost/multiprecision/mpfr.hpp>
 
 #include <boost/units/cmath.hpp>
-#include <boost/units/get_dimension.hpp>
-#include <boost/units/get_system.hpp>
 #include "Dimensions.hh"
 
 #include "Constants.hh"
+#include "BoostUnitsHelpers.hh"
 
 #include "calc_field.hh"
 #include "resistive_source.hh"
@@ -28,34 +27,6 @@ namespace core {
 
 typedef rvlm::core::Constants<float> Const;
 
-// power<N>()
-// power<N, M>()
-// peciprocal()
-//
-
-template <typename Unit, int N, int M=1>
-using static_power_helper = boost::units::unit<
-        typename boost::units::static_power<
-            typename boost::units::get_dimension<Unit>::type,
-            typename boost::units::static_rational<N, M>::type>::type,
-        typename boost::units::get_system<Unit>::type>;
-
-template <int N, typename Unit, typename Y>
-auto mypow(boost::units::quantity<Unit, Y> const& x)
-      -> boost::units::quantity<static_power_helper<Unit, N>, Y>
-{
-    using std::pow;
-    return decltype(mypow<N>(x))::from_value(pow(x.value(), N));
-}
-
-template <int N, int M, typename Unit, typename Y>
-auto mypow(boost::units::quantity<Unit, Y> const& x)
-      -> boost::units::quantity<static_power_helper<Unit, N, M>, Y>
-{
-    using std::pow;
-    return decltype(mypow<N, M>(x))::from_value(pow(x.value(), (Y)N/M));
-}
-
     const int nx = 129;
     const int ny = 129;
     const int nz = 129;
@@ -66,10 +37,8 @@ auto mypow(boost::units::quantity<Unit, Y> const& x)
     const Length<float> dy = dx;
     const Length<float> dz = dx;
     // TODO: FIx it.
-    const Time<float> dt =
-        mypow<-1>(Const::C() * mypow<1,2>(
-            1.0f/(dx*dx) + 1.0f/(dy*dy) + 1.0f/(dz*dz))) *
-        boost::units::quantity<boost::units::si::dimensionless, float>(0.5f);
+    const Time<float> dt = 0.5f /
+        (Const::C() * usqrt(1.0f/(dx*dx) + 1.0f/(dy*dy) + 1.0f/(dz*dz)));
 
 template<typename valueType>
 void dumpImage(std::string const& filename, YeeGrid<valueType> const& grid) {
