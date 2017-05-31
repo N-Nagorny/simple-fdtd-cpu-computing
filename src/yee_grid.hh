@@ -42,12 +42,12 @@ public:
         , D_Hx       (nx, ny, nz,   MagneticCurlCoefficient<T>::from_value(0))
         , D_Hy       (nx, ny, nz,   MagneticCurlCoefficient<T>::from_value(0))
         , D_Hz       (nx, ny, nz,   MagneticCurlCoefficient<T>::from_value(0))
-        , C_Ex       (nx, ny, nz,   0)
-        , C_Ey       (nx, ny, nz,   0)
-        , C_Ez       (nx, ny, nz,   0)
-        , D_Ex       (nx, ny, nz,   ElectricCurlCoefficient<T>())
-        , D_Ey       (nx, ny, nz,   ElectricCurlCoefficient<T>())
-        , D_Ez       (nx, ny, nz,   ElectricCurlCoefficient<T>())
+        , C_Ex       (nx, ny, nz,   Dimensionless<ValueType>(0))
+        , C_Ey       (nx, ny, nz,   Dimensionless<ValueType>(0))
+        , C_Ez       (nx, ny, nz,   Dimensionless<ValueType>(0))
+        , D_Ex       (nx, ny, nz,   ElectricCurlCoefficient<T>::from_value(0))
+        , D_Ey       (nx, ny, nz,   ElectricCurlCoefficient<T>::from_value(0))
+        , D_Ez       (nx, ny, nz,   ElectricCurlCoefficient<T>::from_value(0))
     {}
 
 public:

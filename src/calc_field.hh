@@ -1,7 +1,8 @@
 #include "rvlm/core/SolidArray3d.hh"
 #include "yee_grid.hh"
 
-template <typename CurlCoefficientT,
+template <typename Y,
+          typename CurlCoefficientT,
           typename TimeT,
           typename PermittivityT,
           typename ConductivityT>
@@ -18,12 +19,12 @@ void calcD(rvlm::core::SolidArray3d<CurlCoefficientT>& D,
         auto  curSigma = sigma.at(ix, iy, iz);
         auto  subexpr  = deltaT / curPerm;
 
-        using T = decltype((curSigma*subexpr) / (curSigma*subexpr));
-        curD = subexpr / ((T)1 + curSigma * subexpr/(T)2);
+        curD = subexpr / (Dimensionless<Y>(1) + curSigma * subexpr/Dimensionless<Y>(2));
     }
 }
 
-template <typename CurlCoefficientT, typename TimeT, typename PermittivityT, typename ConductivityT>
+template <typename Y,
+        typename CurlCoefficientT, typename TimeT, typename PermittivityT, typename ConductivityT>
 void calcC(rvlm::core::SolidArray3d<CurlCoefficientT>& C,
            TimeT deltaT,
            rvlm::core::SolidArray3d<PermittivityT> const& perm,
@@ -36,27 +37,25 @@ void calcC(rvlm::core::SolidArray3d<CurlCoefficientT>& C,
         auto  curPerm  = perm.at(ix, iy, iz);
         auto  curSigma = sigma.at(ix, iy, iz);
 
-        using T = decltype(deltaT/deltaT);
-
-        auto  subexpr  = curSigma * deltaT / ((T)2 * curPerm);
-        curC = ((T)1 - subexpr) / ((T)1 + subexpr);
+        auto  subexpr  = curSigma * deltaT / (Dimensionless<Y>(2) * curPerm);
+        curC = (Dimensionless<Y>(1) - subexpr) / (Dimensionless<Y>(1) + subexpr);
     }
 }
 
-template <typename valueType>
-void calcCoefs(YeeGrid<valueType>& grid) {
+template <typename Y>
+void calcCoefs(YeeGrid<Y>& grid) {
 
-    calcD(grid.D_Hx, grid.delta_t, grid.mu_Hx, grid.sigma_Hx);
-    calcD(grid.D_Hy, grid.delta_t, grid.mu_Hy, grid.sigma_Hy);
-    calcD(grid.D_Hz, grid.delta_t, grid.mu_Hz, grid.sigma_Hz);
+    calcD<Y>(grid.D_Hx, grid.delta_t, grid.mu_Hx, grid.sigma_Hx);
+    calcD<Y>(grid.D_Hy, grid.delta_t, grid.mu_Hy, grid.sigma_Hy);
+    calcD<Y>(grid.D_Hz, grid.delta_t, grid.mu_Hz, grid.sigma_Hz);
 
-    calcC(grid.C_Ex, grid.delta_t, grid.epsilon_Ex, grid.sigma_Ex);
-    calcC(grid.C_Ey, grid.delta_t, grid.epsilon_Ey, grid.sigma_Ey);
-    calcC(grid.C_Ez, grid.delta_t, grid.epsilon_Ez, grid.sigma_Ez);
+    calcC<Y>(grid.C_Ex, grid.delta_t, grid.epsilon_Ex, grid.sigma_Ex);
+    calcC<Y>(grid.C_Ey, grid.delta_t, grid.epsilon_Ey, grid.sigma_Ey);
+    calcC<Y>(grid.C_Ez, grid.delta_t, grid.epsilon_Ez, grid.sigma_Ez);
 
-    calcD(grid.D_Ex, grid.delta_t, grid.epsilon_Ex, grid.sigma_Ex);
-    calcD(grid.D_Ey, grid.delta_t, grid.epsilon_Ey, grid.sigma_Ey);
-    calcD(grid.D_Ez, grid.delta_t, grid.epsilon_Ez, grid.sigma_Ez);
+    calcD<Y>(grid.D_Ex, grid.delta_t, grid.epsilon_Ex, grid.sigma_Ex);
+    calcD<Y>(grid.D_Ey, grid.delta_t, grid.epsilon_Ey, grid.sigma_Ey);
+    calcD<Y>(grid.D_Ez, grid.delta_t, grid.epsilon_Ez, grid.sigma_Ez);
 }
 
 template <typename T>

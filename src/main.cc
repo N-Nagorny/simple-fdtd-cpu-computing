@@ -2,7 +2,6 @@
 #include <fstream>
 #include <boost/format.hpp>
 #include <boost/multiprecision/mpfr.hpp>
-
 #include <boost/units/cmath.hpp>
 #include "Dimensions.hh"
 
@@ -12,34 +11,120 @@
 #include "calc_field.hh"
 #include "resistive_source.hh"
 
-typedef boost::multiprecision::number<
-    boost::multiprecision::mpfr_float_backend<250,
-    boost::multiprecision::allocate_stack> > float100;
+template <typename Y>
+class Problem {
+public:
 
-namespace rvlm {
-namespace core {
-    using namespace boost::multiprecision;
+    using Const = rvlm::core::Constants<Y>;
 
-    template
-    class Constants<float100>;
+    const int nx;
+    const int ny;
+    const int nz;
+    const int nl;
+    const Length<Y> lambda;
+    const AngularVelocity<Y> omega;
+    const Length<Y> dx;
+    const Length<Y> dy;
+    const Length<Y> dz;
+    const Time<Y> dt;
+
+    Problem()
+        : nx(129)
+        , ny(129)
+        , nz(129)
+        , nl(20)
+        , lambda(Y(0.05) * boost::units::si::meter)
+        , omega(Dimensionless<Y>(2)*Const::PI() * Const::C()/lambda * boost::units::si::radian)
+        , dx(lambda / Y(nl))
+        , dy(dx)
+        , dz(dx)
+        , dt(Dimensionless<Y>(0.5)/(Const::C() * usqrt(underlying_cast<Y>(Dimensionless<Y>(1)/(dx*dx) + Dimensionless<Y>(1)/(dy*dy) + Dimensionless<Y>(1)/(dz*dz))))) {}
+
+    void setupGrid(YeeGrid<Y>& grid) {
+        int x0 = nx / 2;
+        int y0 = ny / 2;
+        int z0 = nz / 2;
+
+        Permittivity<Y> epsilonAntenna = Const::EPS_0() * Y(10);
+        ElectricConductivity<Y> sigmaAntenna = ElectricConductivity<Y>::from_value(10000);
+        for (int i = 0; i < nl; ++i) {
+            grid.epsilon_Ez.at(x0, y0, z0 + i) = epsilonAntenna;
+            grid.epsilon_Ez.at(x0, y0, z0 - i) = epsilonAntenna;
+            grid.sigma_Ez.at(x0, y0, z0 + i)   = sigmaAntenna;
+            grid.sigma_Ez.at(x0, y0, z0 - i)   = sigmaAntenna;
+        }
+    }
+
+    ElectricPotential<Y> voltage(Time<Y> time) {
+        return std::sin(omega*time) * 1000.0f * boost::units::si::volt;
+    }
+
+    void main() {
+        YeeGrid<Y> grid1(nx, ny, nz, dt, dx, dy, dz);
+        setupGrid(grid1);
+        calcCoefs(grid1);
+
+        int x0 = nx / 2;
+        int y0 = ny / 2;
+        int z0 = nz / 2;
+        //ResistiveSource<float> rsource1(x0, y0, z0, 10 * boost::units::si::ohm);
+        //rsource1.calcCoefs(grid1);
+
+        //ResistiveSourceF rsource2(x0, y0, z0, 10 * boost::units::si::ohm);
+        //rsource2.calcCoefs(grid2);
+
+        Time<Y> time;
+        time = Dimensionless<Y>(0) * boost::units::si::second;
+        int iter = 0;
+        while (iter < 100) {
+            std::cout << "(1) Rocking iteration #" << iter << std::endl;
+            calcH(grid1);
+
+            //rsource1.resqueFields(grid1);
+            calcE(grid1);
+            //rsource1.updateFields(grid1, voltage<float>(time));
+
+            //std::cout << "(2) Rocking iteration #" << iter << std::endl;
+            //calcH(grid2);
+
+            //rsource2.resqueFields(grid2);
+            //calcE(grid2);
+            //rsource2.updateFields(grid2, voltage<float100>(time));
+
+            std::string fn = str(boost::format("fdtd_diff_%02d.ppm") % iter);
+            //dumpDifference(fn, grid1, grid2);
+
+            iter++;
+            time = Y(iter) * dt;
+        }
+    }
+};
+
+int main(int argc, char *argv[]) {
+    if (argc != 2)
+        return 1;
+
+    std::string mode = argv[1];
+    if (mode == "float") {
+        Problem<float> problem;
+        problem.main();
+        return 0;
+    }
+
+    if (mode == "float100") {
+        using float100 = boost::multiprecision::number<
+                boost::multiprecision::mpfr_float_backend<100,
+                        boost::multiprecision::allocate_stack>>;
+
+        Problem<float100> problem;
+        problem.main();
+        return 0;
+    }
+
+    return 1;
 }
-}
 
-typedef rvlm::core::Constants<float> Const;
-
-    const int nx = 129;
-    const int ny = 129;
-    const int nz = 129;
-    const int nl = 20;
-    const Length<float> lambda = 0.05f * boost::units::si::meter;
-    const boost::units::quantity<boost::units::si::angular_velocity, float> omega  = 2 * Const::PI() * boost::units::si::radian * Const::C() / lambda;
-    const Length<float> dx = lambda / (float)nl;
-    const Length<float> dy = dx;
-    const Length<float> dz = dx;
-    // TODO: FIx it.
-    const Time<float> dt = 0.5f /
-        (Const::C() * usqrt(1.0f/(dx*dx) + 1.0f/(dy*dy) + 1.0f/(dz*dz)));
-
+#if 0
 template<typename valueType>
 void dumpImage(std::string const& filename, YeeGrid<valueType> const& grid) {
     int nx = grid.Ez.getCountX();
@@ -170,71 +255,4 @@ void dumpDifference(
     }
 }
 
-template<typename valueType>
-void setupGrid(YeeGrid<valueType>& grid) {
-    int x0 = nx / 2;
-    int y0 = ny / 2;
-    int z0 = nz / 2;
-
-    Permittivity<valueType> epsilonAntenna = rvlm::core::Constants<valueType>::EPS_0() * (valueType)10;
-    ElectricConductivity<valueType> sigmaAntenna = ElectricConductivity<valueType>::from_value(10000);
-    for (int i = 0; i < nl; ++i) {
-        grid.epsilon_Ez.at(x0, y0, z0 + i) = epsilonAntenna;
-        grid.epsilon_Ez.at(x0, y0, z0 - i) = epsilonAntenna;
-        grid.sigma_Ez.at(x0, y0, z0 + i)   = sigmaAntenna;
-        grid.sigma_Ez.at(x0, y0, z0 - i)   = sigmaAntenna;
-    }
-}
-
-template <typename T>
-ElectricPotential<T> voltage(Time<T> time) {
-    return std::sin(omega*time) * 1000.0f * boost::units::si::volt;
-}
-
-int main(int argc, char *argv[]) {
-    using YeeGridF = YeeGrid<float100>;
-    using ResistiveSourceF = ResistiveSource<float100>;
-
-    YeeGrid<float> grid1(nx, ny, nz, dt, dx, dy, dz);
-    setupGrid(grid1);
-    calcCoefs(grid1);
-
-    //YeeGridF grid2(nx, ny, nz, dt, dx, dy, dz);
-    //setupGrid(grid2);
-    //calcCoefs(grid2);
-
-    int x0 = nx / 2;
-    int y0 = ny / 2;
-    int z0 = nz / 2;
-    //ResistiveSource<float> rsource1(x0, y0, z0, 10 * boost::units::si::ohm);
-    //rsource1.calcCoefs(grid1);
-
-    //ResistiveSourceF rsource2(x0, y0, z0, 10 * boost::units::si::ohm);
-    //rsource2.calcCoefs(grid2);
-
-    Time<float> time = 0 * boost::units::si::second;
-    int iter = 0;
-    while (iter < 100) {
-        std::cout << "(1) Rocking iteration #" << iter << std::endl;
-        calcH(grid1);
-
-        //rsource1.resqueFields(grid1);
-        calcE(grid1);
-        //rsource1.updateFields(grid1, voltage<float>(time));
-
-        //std::cout << "(2) Rocking iteration #" << iter << std::endl;
-        //calcH(grid2);
-
-        //rsource2.resqueFields(grid2);
-        //calcE(grid2);
-        //rsource2.updateFields(grid2, voltage<float100>(time));
-
-        std::string fn = str(boost::format("fdtd_diff_%02d.ppm") % iter);
-        //dumpDifference(fn, grid1, grid2);
-
-        iter++;
-        time = dt*(float)iter;
-    }
-
-    return 0;
-}
+#endif

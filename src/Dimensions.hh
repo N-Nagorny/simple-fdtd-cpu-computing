@@ -9,6 +9,10 @@ using Dimensionless =
     boost::units::quantity<boost::units::si::dimensionless, T>;
 
 template <typename T>
+using AngularVelocity =
+    boost::units::quantity<boost::units::si::angular_velocity, T>;
+
+template <typename T>
 using Length = boost::units::quantity<boost::units::si::length, T>;
 
 template <typename T>
