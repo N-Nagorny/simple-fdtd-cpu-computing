@@ -64,3 +64,11 @@ auto reciprocal(boost::units::quantity<Unit, Y> const &x)
     return ratpow<-1>(x);
 }
 
+template<typename Y>
+auto usin(boost::units::quantity<boost::units::si::plane_angle, Y> const& x)
+    -> boost::units::quantity<boost::units::si::dimensionless, Y> {
+
+    using std::sin;
+
+    return boost::units::quantity<boost::units::si::dimensionless, Y>::from_value(sin(x.value()));
+}

@@ -1,8 +1,6 @@
 #pragma once
 #include "Dimensions.hh"
 
-namespace rvlm {
-namespace core {
 /**
  * This class acts as a namespace and contains various mathematical and
  * physycal universal constants. The physical one must be stated in the SI unit
@@ -42,6 +40,3 @@ public:
     /** @todo Find proper name and write documentation. */
     static Resistance<T> ETA_0() { return MU_0() * C(); }
 };
-
-} // namespace core
-} // namespace rvlm

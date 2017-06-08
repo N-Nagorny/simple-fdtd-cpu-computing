@@ -1,21 +1,23 @@
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <boost/format.hpp>
 #include <boost/multiprecision/mpfr.hpp>
 #include <boost/units/cmath.hpp>
+#include <boost/units/io.hpp>
 #include "Dimensions.hh"
 
 #include "Constants.hh"
 #include "BoostUnitsHelpers.hh"
 
 #include "calc_field.hh"
-#include "resistive_source.hh"
+#include "CurrentSource.hh"
 
 template <typename Y>
 class Problem {
 public:
 
-    using Const = rvlm::core::Constants<Y>;
+    using Const = Constants<Y>;
 
     const int nx;
     const int ny;
@@ -55,8 +57,8 @@ public:
         }
     }
 
-    ElectricPotential<Y> voltage(Time<Y> time) {
-        return std::sin(omega*time) * 1000.0f * boost::units::si::volt;
+    Current<Y> signal(Time<Y> const& time) {
+        return usin(underlying_cast<Y>(omega*time)) * Dimensionless<Y>(1000) * boost::units::si::ampere;
     }
 
     void main() {
@@ -67,32 +69,21 @@ public:
         int x0 = nx / 2;
         int y0 = ny / 2;
         int z0 = nz / 2;
-        //ResistiveSource<float> rsource1(x0, y0, z0, 10 * boost::units::si::ohm);
-        //rsource1.calcCoefs(grid1);
-
-        //ResistiveSourceF rsource2(x0, y0, z0, 10 * boost::units::si::ohm);
-        //rsource2.calcCoefs(grid2);
+        CurrentSource<Y> source(x0, y0, z0);
+        source.calcCoefs(grid1);
 
         Time<Y> time;
         time = Dimensionless<Y>(0) * boost::units::si::second;
         int iter = 0;
-        while (iter < 100) {
-            std::cout << "(1) Rocking iteration #" << iter << std::endl;
+        while (iter < 200) {
             calcH(grid1);
 
-            //rsource1.resqueFields(grid1);
             calcE(grid1);
-            //rsource1.updateFields(grid1, voltage<float>(time));
+            source.updateFields(grid1, signal(time));
 
-            //std::cout << "(2) Rocking iteration #" << iter << std::endl;
-            //calcH(grid2);
-
-            //rsource2.resqueFields(grid2);
-            //calcE(grid2);
-            //rsource2.updateFields(grid2, voltage<float100>(time));
-
-            std::string fn = str(boost::format("fdtd_diff_%02d.ppm") % iter);
-            //dumpDifference(fn, grid1, grid2);
+            std::cout << iter << '\t'
+                      << time << '\t'
+                      << grid1.Ez.at(x0 + 30, y0, z0) << std::endl;
 
             iter++;
             time = Y(iter) * dt;
@@ -117,6 +108,16 @@ int main(int argc, char *argv[]) {
                         boost::multiprecision::allocate_stack>>;
 
         Problem<float100> problem;
+        problem.main();
+        return 0;
+    }
+
+    if (mode == "float16") {
+        using float16 = boost::multiprecision::number<
+                boost::multiprecision::mpfr_float_backend<16,
+                        boost::multiprecision::allocate_stack>>;
+
+        Problem<float16> problem;
         problem.main();
         return 0;
     }

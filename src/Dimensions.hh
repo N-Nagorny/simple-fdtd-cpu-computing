@@ -1,5 +1,4 @@
 #pragma once
-
 #include <boost/units/quantity.hpp>
 #include <boost/units/physical_dimensions.hpp>
 #include <boost/units/systems/si.hpp>
@@ -47,16 +46,15 @@ template <typename T>
 using ElectricPotential = boost::units::quantity<boost::units::si::electric_potential, T>;
 
 template <typename T>
-using ElectricIntensity =
-    boost::units::quantity<
-        boost::units::unit<
-            boost::units::derived_dimension<
-                boost::units::length_base_dimension,   1,
-                boost::units::mass_base_dimension,     1,
-                boost::units::current_base_dimension, -1,
-                boost::units::time_base_dimension,    -3>::type,
-            boost::units::si::system>,
-        T>;
+using Current = boost::units::quantity<boost::units::si::current, T>;
+
+using ElectricIntensityUnit =
+    boost::units::divide_typeof_helper<
+        boost::units::si::electric_potential,
+        boost::units::si::length>::type;
+
+template <typename T>
+using ElectricIntensity = boost::units::quantity<ElectricIntensityUnit, T>;
 
 using ElectricCurlCoefficientUnit =
     boost::units::divide_typeof_helper<
