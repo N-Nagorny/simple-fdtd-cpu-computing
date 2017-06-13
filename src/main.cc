@@ -12,6 +12,7 @@
 
 #include "calc_field.hh"
 #include "CurrentSource.hh"
+#include "ConvolutionalPML.hh"
 
 template <typename Y>
 class Problem {
@@ -66,6 +67,24 @@ public:
         setupGrid(grid1);
         calcCoefs(grid1);
 
+        ConvolutionalPML<Y> pml(&grid1,
+                make_triple(HalfOpenIndexRange(0, 8),
+                            HalfOpenIndexRange(0, ny),
+                            HalfOpenIndexRange(0, nz)),
+                make_triple<int>(1,     0, 0),
+                make_triple<Y>  (0.001, 0, 0),
+                make_triple<Y>  (2.5,   0, 0));
+
+        ConvolutionalPML<Y> pml2 {&grid1,
+                { {0, 8},
+                  {0, ny},
+                  {0, nz}},
+                {1,     0, 0},
+                {Y(0.001), Y(0.0), Y(0.0)},
+                {Y(2.5),   Y(0.0), Y(0.0)}};
+
+        pml.setup();
+
         int x0 = nx / 2;
         int y0 = ny / 2;
         int z0 = nz / 2;
@@ -76,6 +95,8 @@ public:
         time = Dimensionless<Y>(0) * boost::units::si::second;
         int iter = 0;
         while (iter < 200) {
+            auto fmt = boost::format("field_%00d.ppm") % iter;
+            dumpImage(fmt.str(), grid1);
             calcH(grid1);
 
             calcE(grid1);
@@ -89,6 +110,61 @@ public:
             time = Y(iter) * dt;
         }
     }
+
+    void dumpImage(std::string const& filename, YeeGrid<Y> const& grid) {
+        int nx = grid.Ez.getCountX();
+        int ny = grid.Ez.getCountY();
+        int z0 = grid.Ex.getCountZ() / 2;
+
+        using boost::units::abs;
+
+        ElectricIntensity<Y> maxEz = 0;
+        for (int ix = 0; ix < nx; ++ix)
+        for (int iy = 0; iy < ny; ++iy) {
+            if ( ((nx/2 - 3) <= ix && ix <= (nx/2 + 3)) &&
+                 ((ny/2 - 3) <= iy && iy <= (ny/2 + 3)) )
+                continue;
+
+            ElectricIntensity<Y> curAbs = abs(grid.Ez.at(ix, iy, z0));
+            if (curAbs > maxEz)
+                maxEz = curAbs;
+        }
+
+        std::ofstream output(filename, std::ios::binary);
+        output << "P6\n" << nx << " " << ny << "\n" << 255 << "\n";
+
+//        valueType x = 0 / maxEx;
+//        if (boost::units::isnan(x)) {
+//            maxEz = 1;
+//            std::cout << "No NaN hack" << std::endl;
+//        }
+
+        Dimensionless<Y> two {2};
+        ElectricIntensity<Y> zero = maxEz - maxEz;
+        char color[3];
+        for (int iy = 0; iy < ny; ++iy)
+        for (int ix = 0; ix < nx; ++ix) {
+            ElectricIntensity<Y> val  = grid.Ez.at(ix, iy, z0);
+
+            unsigned blue = 0;
+            unsigned red  = 0;
+            Dimensionless<Y> level = abs(val) / maxEz;
+            level *= Y(255);
+
+            //if (level > 0)
+            //    std::cout << "level: " << level << std::endl;
+
+            int lvl = (int)level.value();
+            (val >= zero ? blue : red) = lvl;
+
+    //        std::cout << "red: " << red << " blue: " << blue << std::endl;
+            color[0] = red;   // red
+            color[1] = 0;     // green
+            color[2] = blue;  // blue
+            output.write(&color[0], 3);
+        }
+    }
+
 };
 
 int main(int argc, char *argv[]) {
@@ -126,57 +202,6 @@ int main(int argc, char *argv[]) {
 }
 
 #if 0
-template<typename valueType>
-void dumpImage(std::string const& filename, YeeGrid<valueType> const& grid) {
-    int nx = grid.Ez.getCountX();
-    int ny = grid.Ez.getCountY();
-    int z0 = grid.Ex.getCountZ() / 2;
-
-    valueType maxEx = 0;
-    for (int ix = 0; ix < nx; ++ix)
-    for (int iy = 0; iy < ny; ++iy) {
-        if ( ((nx/2 - 3) <= ix && ix <= (nx/2 + 3)) &&
-             ((ny/2 - 3) <= iy && iy <= (ny/2 + 3)) )
-            continue;
-
-
-        valueType curAbs = abs(grid.Ez.at(ix, iy, z0));
-        if (curAbs > maxEx)
-            maxEx = curAbs;
-    }
-
-    std::cout << "MAX_EZ: " << maxEx << std::endl;
-
-    std::ofstream output(filename, std::ios::binary);
-    output << "P6\n" << nx << " " << ny << "\n" << 255 << "\n";
-
-    valueType x = 0 / maxEx;
-    if (boost::math::isnan(x)) {
-        maxEx = 1;
-        std::cout << "No NaN hack" << std::endl;
-    }
-
-    valueType two = 2;
-    char color[3];
-    for (int iy = 0; iy < ny; ++iy)
-    for (int ix = 0; ix < nx; ++ix) {
-        float val  = grid.Ez.at(ix, iy, z0);
-        unsigned blue = 0;
-        unsigned red  = 0;
-        valueType level = std::abs(val) / maxEx * 255;
-
-        //if (level > 0)
-        //    std::cout << "level: " << level << std::endl;
-
-        (val >= 0 ? blue : red) = (int)level;
-
-//        std::cout << "red: " << red << " blue: " << blue << std::endl;
-        color[0] = red;   // red
-        color[1] = 0;     // green
-        color[2] = blue;  // blue
-        output.write(&color[0], 3);
-    }
-}
 
 template<typename valueTypeLo, typename valueTypeHi>
 void dumpDifference(

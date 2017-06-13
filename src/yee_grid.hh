@@ -2,6 +2,7 @@
 #include "rvlm/core/SolidArray3d.hh"
 #include "Constants.hh"
 #include "Dimensions.hh"
+#include "Common.hh"
 
 template <typename Y>
 class YeeGrid {
@@ -11,7 +12,7 @@ public:
     using ValueType = Y;
 
     template <typename U>
-    using ArrayType = rvlm::core::SolidArray3d<U>;
+    using ArrayType = rvlm::core::SolidArray3d<U, Index>;
 
 public:
     YeeGrid(int nx, int ny, int nz,
@@ -47,6 +48,12 @@ public:
         , D_Ex       (nx, ny, nz,   ElectricCurlCoefficient<Y>::from_value(0))
         , D_Ey       (nx, ny, nz,   ElectricCurlCoefficient<Y>::from_value(0))
         , D_Ez       (nx, ny, nz,   ElectricCurlCoefficient<Y>::from_value(0))
+        //
+        , spatialSteps(delta_x, delta_y, delta_z)
+        , epsilons    (epsilon_Ex, epsilon_Ey, epsilon_Ez)
+        , mus         (mu_Hx,      mu_Hy,      mu_Hz)
+        , sigmasE     (sigma_Ex,   sigma_Ey,   sigma_Ez)
+        , sigmasH     (sigma_Hx,   sigma_Hy,   sigma_Hz)
     {}
 
 public:
@@ -69,4 +76,11 @@ public:
     ArrayType<ElectricCurlCoefficient<Y>> D_Ex, D_Ey, D_Ez;
 
     ArrayType<Dimensionless<Y>> C_Ex, C_Ey, C_Ez;
+
+    Triple<Length<ValueType>&> spatialSteps;
+    Triple<ArrayType<Permittivity<ValueType>>&> epsilons;
+    Triple<ArrayType<Permeability<ValueType>>&> mus;
+    Triple<ArrayType<ElectricConductivity<ValueType>>&> sigmasE;
+    Triple<ArrayType<MagneticLoss<ValueType>>&> sigmasH;
+
 };

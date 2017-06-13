@@ -1,4 +1,4 @@
-#include "rvlm/core/SolidArray3d.hh"
+#include "Common.hh"
 #include "yee_grid.hh"
 
 template <typename Y,
@@ -6,10 +6,10 @@ template <typename Y,
           typename TimeT,
           typename PermittivityT,
           typename ConductivityT>
-void calcD(rvlm::core::SolidArray3d<CurlCoefficientT>& D,
+void calcD(Array<CurlCoefficientT>& D,
            TimeT const& deltaT,
-           rvlm::core::SolidArray3d<PermittivityT> const& perm,
-           rvlm::core::SolidArray3d<ConductivityT> const& sigma) {
+           Array<PermittivityT> const& perm,
+           Array<ConductivityT> const& sigma) {
 
     for (int ix = 0; ix < D.getCountX(); ix++)
     for (int iy = 0; iy < D.getCountY(); iy++)
@@ -25,10 +25,10 @@ void calcD(rvlm::core::SolidArray3d<CurlCoefficientT>& D,
 
 template <typename Y,
         typename CurlCoefficientT, typename TimeT, typename PermittivityT, typename ConductivityT>
-void calcC(rvlm::core::SolidArray3d<CurlCoefficientT>& C,
-           TimeT deltaT,
-           rvlm::core::SolidArray3d<PermittivityT> const& perm,
-           rvlm::core::SolidArray3d<ConductivityT> const& sigma) {
+void calcC(Array<CurlCoefficientT>& C,
+           TimeT const& deltaT,
+           Array<PermittivityT> const& perm,
+           Array<ConductivityT> const& sigma) {
 
     for (int ix = 0; ix < C.getCountX(); ix++)
     for (int iy = 0; iy < C.getCountY(); iy++)

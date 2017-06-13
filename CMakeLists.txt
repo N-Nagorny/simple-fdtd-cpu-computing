@@ -8,6 +8,8 @@ add_subdirectory(rvlm-common)
 add_executable(fdtd
    src/calc_field.hh
    src/resistive_source.hh
+   src/Common.hh
+   src/ConvolutionalPML.hh
    src/CurrentSource.hh
    src/yee_grid.hh
    src/Dimensions.hh
