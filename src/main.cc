@@ -96,7 +96,7 @@ public:
         int iter = 0;
         while (iter < 200) {
             auto fmt = boost::format("field_%00d.ppm") % iter;
-            dumpImage(fmt.str(), grid1);
+            dumpImage(fmt.str(), grid1.Ez);
             calcH(grid1);
 
             calcE(grid1);
@@ -111,23 +111,24 @@ public:
         }
     }
 
-    void dumpImage(std::string const& filename, YeeGrid<Y> const& grid) {
-        int nx = grid.Ez.getCountX();
-        int ny = grid.Ez.getCountY();
-        int z0 = grid.Ex.getCountZ() / 2;
+    template <typename Q>
+    void dumpImage(std::string const& filename, Array<Q> const& field) {
+        int nx = field.getCountX();
+        int ny = field.getCountY();
+        int z0 = field.getCountZ() / 2;
 
         using boost::units::abs;
 
-        ElectricIntensity<Y> maxEz = 0;
+        Q maxField = Q::from_value(Y(0));
         for (int ix = 0; ix < nx; ++ix)
         for (int iy = 0; iy < ny; ++iy) {
             if ( ((nx/2 - 3) <= ix && ix <= (nx/2 + 3)) &&
                  ((ny/2 - 3) <= iy && iy <= (ny/2 + 3)) )
                 continue;
 
-            ElectricIntensity<Y> curAbs = abs(grid.Ez.at(ix, iy, z0));
-            if (curAbs > maxEz)
-                maxEz = curAbs;
+            Q curAbs = abs(field.at(ix, iy, z0));
+            if (curAbs > maxField)
+                maxField = curAbs;
         }
 
         std::ofstream output(filename, std::ios::binary);
@@ -140,15 +141,16 @@ public:
 //        }
 
         Dimensionless<Y> two {2};
-        ElectricIntensity<Y> zero = maxEz - maxEz;
+        Q zero = maxField - maxField;
+
         char color[3];
         for (int iy = 0; iy < ny; ++iy)
         for (int ix = 0; ix < nx; ++ix) {
-            ElectricIntensity<Y> val  = grid.Ez.at(ix, iy, z0);
+            Q val  = field.at(ix, iy, z0);
 
             unsigned blue = 0;
             unsigned red  = 0;
-            Dimensionless<Y> level = abs(val) / maxEz;
+            Dimensionless<Y> level = abs(val) / maxField;
             level *= Y(255);
 
             //if (level > 0)
