@@ -1,8 +1,19 @@
 #pragma once
 #include <cstdint>
 #include <tuple>
+#include <boost/optional.hpp>
 #include "rvlm/core/HalfOpenRange.hh"
 #include "rvlm/core/SolidArray3d.hh"
+
+#define RVLM_FDTD_DASSERT(expr)
+
+template <typename T>
+using Optional = boost::optional<T>;
+
+enum class AxialDirection {
+    positive,
+    negative,
+};
 
 using Index = std::ptrdiff_t;
 
