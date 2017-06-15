@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include "Constants.hh"
 #include "BoostUnitsHelpers.hh"
 #include "Common.hh"
@@ -16,10 +17,10 @@ public:
     using Array = rvlm::core::SolidArray3d<YY, Index>;
 
     ConvolutionalPML(YeeGrid<Y> *grid,
-                     HalfOpenIndexRanges      const& presentCells,
-                     Triple<int>              const& gradientDirection,
-                     Triple<Dimensionless<Y>> const& reflectionCoeffs,
-                     Triple<Dimensionless<Y>> const& parametersG)
+                     HalfOpenIndexRanges         const& presentCells,
+                     Triple<Optional<AxialDirection>> const& gradientDirection,
+                     Triple<Dimensionless<Y>>    const& reflectionCoeffs,
+                     Triple<Dimensionless<Y>>    const& parametersG)
         : mYeeGrid(grid)
         , mPresentCells(presentCells)
         , mGradientDirection(gradientDirection)
@@ -40,19 +41,23 @@ public:
         {}
 
     void setup() {
-        int gradX, gradY, gradZ;
+        Optional<AxialDirection> gradX, gradY, gradZ;
         std::tie(gradX, gradY, gradZ) = mGradientDirection;
 
-        //if (gradX > 0)
-        //    fillSigmasTowardXmax();
+        if (gradX) {
+            precalculateCoefficients<0>();
+            fillSigmas<0>(*gradX);
+        }
 
-        //if (gradX < 0)
-        //    fillSigmasTowardXmin();
+        if (gradY) {
+            precalculateCoefficients<1>();
+            fillSigmas<1>(*gradY);
+        }
 
-        // ...
-
-        precalculateCoefficients<0>();
-        fillSigmasForward<0>();
+        if (gradZ) {
+            precalculateCoefficients<2>();
+            fillSigmas<2>(*gradZ);
+        }
     }
 
     void calcH() {
@@ -103,36 +108,47 @@ private:
         ElectricConductivity<Y> sigma0 {
             - Const::C() * Const::EPS_0() / (Dimensionless<Y>(2) * d)
                     * logG / (powG - Dimensionless<Y>(1.0)) * logR
-                                            };
+        };
 
         condt0 = sigma0 * (sqrtG - Dimensionless<Y>(1)) / logG;
         condt1 = sigma0 * (g - Dimensionless<Y>(1)) / (sqrtG * logG);
     }
 
     template <int Axis>
-    void fillSigmasForward() {
+    void fillSigmas(AxialDirection dir) {
         constexpr int A0 = Axis;
         constexpr int A1 = (A0 + 1) % 3;
         constexpr int A2 = (A0 + 2) % 3;
 
-        Index const s0 = std::get<A0>(mPresentCells).start;
-        Index const s1 = std::get<A1>(mPresentCells).start;
         Index const s2 = std::get<A2>(mPresentCells).start;
         auto const& arrEps    = std::get<A0>(mYeeGrid->epsilons);
         auto const& arrMu     = std::get<A0>(mYeeGrid->mus);
-        auto const& arrSigmaE = std::get<A0>(mYeeGrid->sigmasE);
-        auto const& arrSigmaH = std::get<A0>(mYeeGrid->sigmasH);
-        auto curEps    = arrEps   .template getCursor<A0,A1,A2>(s0, s1, s2);
-        auto curMu     = arrMu    .template getCursor<A0,A1,A2>(s0, s1, s2);
-        auto curSigmaE = arrSigmaE.template getCursor<A0,A1,A2>(s0, s1, s2);
-        auto curSigmaH = arrSigmaH.template getCursor<A0,A1,A2>(s0, s1, s2);
+        auto & arrSigmaE = std::get<A0>(mYeeGrid->sigmasE);
+        auto & arrSigmaH = std::get<A0>(mYeeGrid->sigmasH);
 
-        Index itwice = 0;
+        Index itwiceE;
+        Index itwiceH;
+        Index itwiceStep;
+
+        if (dir == AxialDirection::positive) {
+            itwiceE = 0;
+            itwiceH = 1;
+            itwiceStep = 2;
+        } else {
+            Index n = std::get<A0>(mPresentCells).size();
+            itwiceH = 2*(n - 1);
+            itwiceE = itwiceH - 1;
+            itwiceStep = -2;
+        }
+
         for (auto i0: std::get<A0>(mPresentCells)) {
             (void)i0;
+            RVLM_FDTD_DASSERT(itwiceE >= 0);
+            RVLM_FDTD_DASSERT(itwiceH >= 0);
 
-            ElectricConductivity<Y> cdty0 = conductivityProfile<A0>(itwice);
-            ElectricConductivity<Y> cdty1 = conductivityProfile<A0>(itwice+1);
+            ElectricConductivity<Y> cdty0 = conductivityProfile<A0>(itwiceE);
+            ElectricConductivity<Y> cdty1 = conductivityProfile<A0>(itwiceH);
+            std::cerr << "PROFILE for axis " << A0 << " [" << itwiceE << "] " << cdty0 << '\n';
 
             for (auto i1: std::get<A1>(mPresentCells)) {
                 (void)i1;
@@ -140,32 +156,25 @@ private:
                 for (auto i2: std::get<A2>(mPresentCells)) {
                     (void)i2;
 
-                    auto const& eps = arrEps   .at(curEps);
-                    auto const& mu  = arrMu    .at(curMu);
-                    auto & sigmaE   = arrSigmaE.at(curSigmaE);
-                    auto & sigmaH   = arrSigmaH.at(curSigmaH);
+                    Index cx, cy, cz;
+                    auto cur1 = arrEps.template getCursorX<A0,A1,A2>(i0, i1, i2);
+                    arrEps.cursorCoordinates(cur1, cx, cy, cz);
+                    auto cur2 = arrEps.getCursor(cx, cy, cz);
+                    if (cur1 != cur2)
+                        std::cerr << "SHIT\n";
+
+                    auto const& eps = arrEps   .template at<A0,A1,A2>(i0, i1, i2);
+                    auto const& mu  = arrMu    .template at<A0,A1,A2>(i0, i1, i2);
+                    auto & sigmaE   = arrSigmaE.template at<A0,A1,A2>(i0, i1, i2);
+                    auto & sigmaH   = arrSigmaH.template at<A0,A1,A2>(i0, i1, i2);
 
                     sigmaE = cdty0;
                     sigmaH = cdty1 * mu / eps;
-
-                    arrEps   .template cursorMoveToNext<A2>(curEps);
-                    arrMu    .template cursorMoveToNext<A2>(curMu);
-                    arrSigmaE.template cursorMoveToNext<A2>(curSigmaE);
-                    arrSigmaH.template cursorMoveToNext<A2>(curSigmaH);
                 }
-
-                arrEps   .template cursorMoveToNext<A1>(curEps);
-                arrMu    .template cursorMoveToNext<A1>(curMu);
-                arrSigmaE.template cursorMoveToNext<A1>(curSigmaE);
-                arrSigmaH.template cursorMoveToNext<A1>(curSigmaH);
             }
 
-            itwice += 2;
-
-            arrEps   .template cursorMoveToNext<A0>(curEps);
-            arrMu    .template cursorMoveToNext<A0>(curMu);
-            arrSigmaE.template cursorMoveToNext<A0>(curSigmaE);
-            arrSigmaH.template cursorMoveToNext<A0>(curSigmaH);
+            itwiceE += itwiceStep;
+            itwiceH += itwiceStep;
         }
     }
 
@@ -174,7 +183,7 @@ private:
     HalfOpenIndexRanges
         mPresentCells;
 
-    Triple<int>
+    Triple<Optional<AxialDirection>>
         mGradientDirection;
 
     Triple<Dimensionless<Y>>

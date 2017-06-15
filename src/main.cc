@@ -67,27 +67,45 @@ public:
         setupGrid(grid1);
         calcCoefs(grid1);
 
-        ConvolutionalPML<Y> pml(&grid1,
-                make_triple(HalfOpenIndexRange(0, 8),
-                            HalfOpenIndexRange(0, ny),
-                            HalfOpenIndexRange(0, nz)),
-                make_triple<int>(1,     0, 0),
-                make_triple<Y>  (0.001, 0, 0),
-                make_triple<Y>  (2.5,   0, 0));
+//        ConvolutionalPML<Y> pml(&grid1,
+//                make_triple(HalfOpenIndexRange(0, 8),
+//                            HalfOpenIndexRange(0, ny),
+//                            HalfOpenIndexRange(0, nz)),
+//                                make_triple<Optional<AxialDirection>>(AxialDirection::positive, {}, {}),
+//                make_triple<Y>  (0.001, 0, 0),
+//                make_triple<Y>  (2.5,   0, 0));
 
         ConvolutionalPML<Y> pml2 {&grid1,
                 { {0, 8},
                   {0, ny},
                   {0, nz}},
-                {1,     0, 0},
-                {Y(0.001), Y(0.0), Y(0.0)},
-                {Y(2.5),   Y(0.0), Y(0.0)}};
+                {AxialDirection::negative, {}, {}},
+                {Y(0.001), Y(0.001), Y(0.0)},
+                {Y(2.5),   Y(2.5),   Y(0.0)}};
 
-        pml.setup();
+        pml2.setup();
+
+        ConvolutionalPML<Y> pml3 {&grid1,
+                { {0, nx},
+                  {0, 8},
+                  {0, nz}},
+                {Optional<AxialDirection>(), AxialDirection::negative, {}},
+                {Y(0.001), Y(0.001), Y(0.0)},
+                {Y(2.5),   Y(2.5),   Y(0.0)}};
+
+        pml3.setup();
+
+
+        dumpImage("sigma_Ex.ppm", grid1.sigma_Ex);
+        dumpImage("sigma_Ey.ppm", grid1.sigma_Ey);
 
         int x0 = nx / 2;
         int y0 = ny / 2;
         int z0 = nz / 2;
+        for (Index iy = 0; iy < 30; ++iy) {
+            std::cout << iy << '\t'
+                      << grid1.sigma_Ey.at(0, iy, 0) << '\n';
+        }
         CurrentSource<Y> source(x0, y0, z0);
         source.calcCoefs(grid1);
 
