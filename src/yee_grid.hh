@@ -54,6 +54,8 @@ public:
         , mus         (mu_Hx,      mu_Hy,      mu_Hz)
         , sigmasE     (sigma_Ex,   sigma_Ey,   sigma_Ez)
         , sigmasH     (sigma_Hx,   sigma_Hy,   sigma_Hz)
+        , fieldsE     (Ex, Ey, Ez)
+        , fieldsH     (Hx, Hy, Hz)
     {}
 
 public:
@@ -83,4 +85,6 @@ public:
     Triple<ArrayType<ElectricConductivity<ValueType>>&> sigmasE;
     Triple<ArrayType<MagneticLoss<ValueType>>&> sigmasH;
 
+    Triple<ArrayType<ElectricIntensity<Y>>&> fieldsE;
+    Triple<ArrayType<MagneticIntensity<Y>>&> fieldsH;
 };

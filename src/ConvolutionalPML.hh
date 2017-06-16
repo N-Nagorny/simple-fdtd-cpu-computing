@@ -38,6 +38,28 @@ public:
         , mFieldHyz(presentCells, MagneticIntensity<Y>::from_value(0))
         , mFieldHzx(presentCells, MagneticIntensity<Y>::from_value(0))
         , mFieldHzy(presentCells, MagneticIntensity<Y>::from_value(0))
+        , mFieldCax(presentCells, Dimensionless<Y>::from_value(0))
+        , mFieldCay(presentCells, Dimensionless<Y>::from_value(0))
+        , mFieldCaz(presentCells, Dimensionless<Y>::from_value(0))
+        , mFieldDax(presentCells, Dimensionless<Y>::from_value(0))
+        , mFieldDay(presentCells, Dimensionless<Y>::from_value(0))
+        , mFieldDaz(presentCells, Dimensionless<Y>::from_value(0))
+        , mFieldCbx(presentCells, ElectricCurlCoefficient<Y>::from_value(0))
+        , mFieldCby(presentCells, ElectricCurlCoefficient<Y>::from_value(0))
+        , mFieldCbz(presentCells, ElectricCurlCoefficient<Y>::from_value(0))
+        , mFieldDbx(presentCells, MagneticCurlCoefficient<Y>::from_value(0))
+        , mFieldDby(presentCells, MagneticCurlCoefficient<Y>::from_value(0))
+        , mFieldDbz(presentCells, MagneticCurlCoefficient<Y>::from_value(0))
+        , mFieldsCa(mFieldCax, mFieldCay, mFieldCaz)
+        , mFieldsCb(mFieldCbx, mFieldCby, mFieldCbz)
+        , mFieldsDa(mFieldDax, mFieldDay, mFieldDaz)
+        , mFieldsDb(mFieldDbx, mFieldDby, mFieldDbz)
+        , mFieldsPmlE( {mFieldExy,   mFieldExy, mFieldExz},
+                       {mFieldEyx, mFieldExy,   mFieldEyz},
+                       {mFieldEzx, mFieldEzy, mFieldExy})
+        , mFieldsPmlH( {mFieldHxy,   mFieldHxy, mFieldHxz},
+                       {mFieldHyx, mFieldHxy,   mFieldHyz},
+                       {mFieldHzx, mFieldHzy, mFieldHxy})
         {}
 
     void setup() {
@@ -60,12 +82,163 @@ public:
         }
     }
 
-    void calcH() {
+    void precalculatePmlCoefficients() {
+        precalculatePmlCoefficients<0>();
+        precalculatePmlCoefficients<1>();
+        precalculatePmlCoefficients<2>();
+    }
 
+    template <int Axis>
+    void precalculatePmlCoefficients() {
+        auto const& arrEps    = std::get<Axis>(mYeeGrid->epsilons);
+        auto const& arrMu     = std::get<Axis>(mYeeGrid->mus);
+        auto const& arrSigmaE = std::get<Axis>(mYeeGrid->sigmasE);
+        auto const& arrSigmaH = std::get<Axis>(mYeeGrid->sigmasH);
+        auto      & arrCa     = std::get<Axis>(mFieldsCa);
+        auto      & arrCb     = std::get<Axis>(mFieldsCb);
+        auto      & arrDa     = std::get<Axis>(mFieldsDa);
+        auto      & arrDb     = std::get<Axis>(mFieldsDb);
+
+        Time<Y> const& deltaT = mYeeGrid->delta_t;
+        Dimensionless<Y> one = Y(1);
+        Dimensionless<Y> two = Y(2);
+        for (Index ix: std::get<0>(mPresentCells))
+        for (Index iy: std::get<1>(mPresentCells))
+        for (Index iz: std::get<2>(mPresentCells)) {
+            auto const& eps    = arrEps    .at(ix, iy, iz);
+            auto const& mu     = arrMu     .at(ix, iy, iz);
+            auto const& sigmaE = arrSigmaE .at(ix, iy, iz);
+            auto const& sigmaH = arrSigmaH .at(ix, iy, iz);
+            auto      & Ca     = arrCa     .at(ix, iy, iz);
+            auto      & Cb     = arrCb     .at(ix, iy, iz);
+            auto      & Da     = arrDa     .at(ix, iy, iz);
+            auto      & Db     = arrDb     .at(ix, iy, iz);
+
+            auto epsSubexpr = one + sigmaE * deltaT / (two * eps);
+            auto muSubexpr  = one + sigmaH * deltaT / (two * mu);
+            Ca = (one - sigmaE * deltaT / (two * eps) ) / epsSubexpr;
+            Da = (one - sigmaH * deltaT / (two * mu) )  / muSubexpr;
+            Cb = deltaT / eps / epsSubexpr;
+            Db = deltaT / mu  / muSubexpr;
+        }
+    }
+
+    template <int Axis0, int Axis1>
+    void calcPmlH() {
+        static_assert(Axis0 != Axis1, "");
+        constexpr int A0 = Axis0;
+        constexpr int A1 = Axis1;
+        constexpr int A2 = 3 - (Axis1 + Axis0);
+
+        auto const& arrDa = std::get<A0>(mFieldsDa);
+        auto const& arrDb = std::get<A1>(mFieldsDb);
+        auto const& arrE  = std::get<A2>(mYeeGrid->fieldsE);
+        auto const& delta = std::get<A1>(mYeeGrid->spatialSteps);
+        auto      & arrH  = std::get<A0>(std::get<A1>(mFieldsPmlH));
+
+        for (Index i0: std::get<A0>(mPresentCells))
+        for (Index i1: std::get<A1>(mPresentCells))
+        for (Index i2: std::get<A2>(mPresentCells)) {
+            auto const& Da = arrDa.template at<A0,A1,A2>(i0, i1, i2);
+            auto const& Db = arrDb.template at<A0,A1,A2>(i0, i1, i2);
+            auto const& E  = arrE .template at<A0,A1,A2>(i0, i1, i2);
+            auto const& E1 = arrE .template at<A0,A1,A2>(i0, i1+1, i2);
+            auto      & H  = arrH .template at<A0,A1,A2>(i0, i1, i2);
+
+            H = H * Da - Db / delta * (E1 - E);
+        }
+    }
+
+    void calcH() {
+        calcPmlH<0, 1>();
+        calcPmlH<0, 2>();
+        sumPmlFieldsH<0>();
+        calcPmlH<1, 0>();
+        calcPmlH<1, 2>();
+        sumPmlFieldsH<1>();
+        calcPmlH<2, 0>();
+        calcPmlH<2, 1>();
+        sumPmlFieldsH<1>();
+    }
+
+    template <int Axis0, int Axis1>
+    void calcPmlE() {
+        static_assert(Axis0 != Axis1, "");
+        constexpr int A0 = Axis0;
+        constexpr int A1 = Axis1;
+        constexpr int A2 = 3 - (Axis1 + Axis0);
+
+        auto const& arrCa = std::get<A0>(mFieldsCa);
+        auto const& arrCb = std::get<A1>(mFieldsCb);
+        auto const& arrH  = std::get<A2>(mYeeGrid->fieldsH);
+        auto const& delta = std::get<A1>(mYeeGrid->spatialSteps);
+        auto      & arrE  = std::get<A0>(std::get<A1>(mFieldsPmlE));
+
+        for (Index i0: std::get<A0>(mPresentCells))
+        for (Index i1: std::get<A1>(mPresentCells))
+        for (Index i2: std::get<A2>(mPresentCells)) {
+            auto const& Ca = arrCa.template at<A0,A1,A2>(i0, i1, i2);
+            auto const& Cb = arrCb.template at<A0,A1,A2>(i0, i1, i2);
+            auto const& H  = arrH .template at<A0,A1,A2>(i0, i1, i2);
+            auto const& H1 = arrH .template at<A0,A1,A2>(i0, i1-1, i2);
+            auto      & E  = arrE .template at<A0,A1,A2>(i0, i1, i2);
+
+            E = E * Ca - Cb / delta * (H - H1);
+        }
+    }
+
+    template <int Axis>
+    void sumPmlFieldsE() {
+        constexpr int A0 = Axis;
+        constexpr int A1 = (Axis + 1) % 3;
+        constexpr int A2 = (Axis + 2) % 3;
+
+        auto const& arrE01 = std::get<A0>(std::get<A1>(mFieldsPmlE));
+        auto const& arrE02 = std::get<A0>(std::get<A2>(mFieldsPmlE));
+        auto      & arrE0  = std::get<A0>(mYeeGrid->fieldsE);
+
+        for (Index i0: std::get<A0>(mPresentCells))
+        for (Index i1: std::get<A1>(mPresentCells))
+        for (Index i2: std::get<A2>(mPresentCells)) {
+            auto const& E01 = arrE01.template at<A0,A1,A2>(i0,i1,i2);
+            auto const& E02 = arrE02.template at<A0,A1,A2>(i0,i1,i2);
+            auto      & E0  = arrE0 .template at<A0,A1,A2>(i0,i1,i2);
+
+            E0 = E01 + E02;
+        }
+    }
+
+    template <int Axis>
+    void sumPmlFieldsH() {
+        constexpr int A0 = Axis;
+        constexpr int A1 = (Axis + 1) % 3;
+        constexpr int A2 = (Axis + 2) % 3;
+
+        auto const& arrH01 = std::get<A0>(std::get<A1>(mFieldsPmlH));
+        auto const& arrH02 = std::get<A0>(std::get<A2>(mFieldsPmlH));
+        auto      & arrH0  = std::get<A0>(mYeeGrid->fieldsH);
+
+        for (Index i0: std::get<A0>(mPresentCells))
+        for (Index i1: std::get<A1>(mPresentCells))
+        for (Index i2: std::get<A2>(mPresentCells)) {
+            auto const& H01 = arrH01.template at<A0,A1,A2>(i0,i1,i2);
+            auto const& H02 = arrH02.template at<A0,A1,A2>(i0,i1,i2);
+            auto      & H0  = arrH0 .template at<A0,A1,A2>(i0,i1,i2);
+
+            H0 = H01 + H02;
+        }
     }
 
     void calcE() {
-
+        calcPmlE<0, 1>();
+        calcPmlE<0, 2>();
+        sumPmlFieldsE<0>();
+        calcPmlE<1, 0>();
+        calcPmlE<1, 2>();
+        sumPmlFieldsE<1>();
+        calcPmlE<2, 0>();
+        calcPmlE<2, 1>();
+        sumPmlFieldsE<2>();
     }
 
 private:
@@ -203,4 +376,24 @@ private:
         mFieldHxy, mFieldHxz,
         mFieldHyx, mFieldHyz,
         mFieldHzx, mFieldHzy;
+
+    Array<Dimensionless<Y>>
+        mFieldDax, mFieldDay, mFieldDaz;
+
+    Array<MagneticCurlCoefficient<Y>>
+        mFieldDbx, mFieldDby, mFieldDbz;
+
+    Array<Dimensionless<Y>>
+        mFieldCax, mFieldCay, mFieldCaz;
+
+    Array<ElectricCurlCoefficient<Y>>
+        mFieldCbx, mFieldCby, mFieldCbz;
+
+    Triple<Triple<Array<MagneticIntensity<Y>>&>> mFieldsPmlH;
+    Triple<Triple<Array<ElectricIntensity<Y>>&>> mFieldsPmlE;
+
+    Triple<Array<Dimensionless<Y>>&> mFieldsCa;
+    Triple<Array<ElectricCurlCoefficient<Y>>&> mFieldsCb;
+    Triple<Array<Dimensionless<Y>>&> mFieldsDa;
+    Triple<Array<MagneticCurlCoefficient<Y>>&> mFieldsDb;
 };

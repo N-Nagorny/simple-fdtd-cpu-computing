@@ -76,14 +76,15 @@ public:
 //                make_triple<Y>  (2.5,   0, 0));
 
         ConvolutionalPML<Y> pml2 {&grid1,
-                { {0, 8},
-                  {0, ny},
-                  {0, nz}},
+                { {1, 9},
+                  {1, ny-1},
+                  {1, nz-1}},
                 {AxialDirection::negative, {}, {}},
                 {Y(0.001), Y(0.001), Y(0.0)},
                 {Y(2.5),   Y(2.5),   Y(0.0)}};
 
         pml2.setup();
+        pml2.precalculatePmlCoefficients();
 
         ConvolutionalPML<Y> pml3 {&grid1,
                 { {0, nx},
@@ -93,7 +94,7 @@ public:
                 {Y(0.001), Y(0.001), Y(0.0)},
                 {Y(2.5),   Y(2.5),   Y(0.0)}};
 
-        pml3.setup();
+        //pml3.setup();
 
 
         dumpImage("sigma_Ex.ppm", grid1.sigma_Ex);
@@ -112,12 +113,14 @@ public:
         Time<Y> time;
         time = Dimensionless<Y>(0) * boost::units::si::second;
         int iter = 0;
-        while (iter < 200) {
+        while (iter < 500) {
             auto fmt = boost::format("field_%00d.ppm") % iter;
             dumpImage(fmt.str(), grid1.Ez);
             calcH(grid1);
+            pml2.calcH();
 
             calcE(grid1);
+            pml2.calcE();
             source.updateFields(grid1, signal(time));
 
             std::cout << iter << '\t'
@@ -138,8 +141,8 @@ public:
         using boost::units::abs;
 
         Q maxField = Q::from_value(Y(0));
-        for (int ix = 0; ix < nx; ++ix)
-        for (int iy = 0; iy < ny; ++iy) {
+        for (int ix = 25; ix < nx; ++ix)
+        for (int iy = 25; iy < ny; ++iy) {
             if ( ((nx/2 - 3) <= ix && ix <= (nx/2 + 3)) &&
                  ((ny/2 - 3) <= iy && iy <= (ny/2 + 3)) )
                 continue;
