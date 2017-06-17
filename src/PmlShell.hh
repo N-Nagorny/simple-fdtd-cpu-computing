@@ -1,7 +1,7 @@
 #pragma once
 #include <initializer_list>
 #include "yee_grid.hh"
-#include "ConvolutionalPML.hh"
+#include "BerengerPML.hh"
 
 template <typename Y>
 class PmlShell {
@@ -24,7 +24,7 @@ public:
             if (nX == 1 && nY == 1 && nZ == 1)
                 continue;
 
-            auto pml = new ConvolutionalPML<Y>(mYeeGrid,
+            auto pml = new BerengerPML<Y>(mYeeGrid,
                     make_triple(get(rangesX, nX),
                                 get(rangesY, nY),
                                 get(rangesZ, nZ)),
@@ -34,7 +34,7 @@ public:
                     mParametersR,
                     mParametersG);
 
-            mPmls.push_back(std::unique_ptr<ConvolutionalPML<Y>>(pml));
+            mPmls.push_back(std::unique_ptr<BerengerPML<Y>>(pml));
         }
     }
 
@@ -68,5 +68,5 @@ private:
 
     YeeGrid<Y> *mYeeGrid;
     Triple<Dimensionless<Y>> mParametersR, mParametersG;
-    std::vector<std::unique_ptr<ConvolutionalPML<Y>>> mPmls;
+    std::vector<std::unique_ptr<BerengerPML<Y>>> mPmls;
 };

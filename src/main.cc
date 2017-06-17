@@ -12,7 +12,7 @@
 
 #include "calc_field.hh"
 #include "CurrentSource.hh"
-#include "ConvolutionalPML.hh"
+#include "BerengerPML.hh"
 #include "PmlShell.hh"
 
 template <typename Y>

@@ -9,7 +9,7 @@
 #include "rvlm/core/LeviCivita.hh"
 
 template <typename Y>
-class ConvolutionalPML {
+class BerengerPML {
 public:
 
     using Const = Constants<Y>;
@@ -17,7 +17,7 @@ public:
     template <typename YY>
     using Array = rvlm::core::SolidArray3d<YY, Index>;
 
-    ConvolutionalPML(YeeGrid<Y> *grid,
+    BerengerPML(YeeGrid<Y> *grid,
                      HalfOpenIndexRanges         const& presentCells,
                      Triple<Optional<AxialDirection>> const& gradientDirection,
                      Triple<Dimensionless<Y>>    const& reflectionCoeffs,
