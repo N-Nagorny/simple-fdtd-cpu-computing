@@ -32,11 +32,11 @@ public:
     const Time<Y> dt;
 
     Problem()
-        : nx(129)
-        , ny(129)
+        : nx(65)
+        , ny(65)
         , nz(129)
         , nl(20)
-        , lambda(Y(0.05) * boost::units::si::meter)
+        , lambda(Y(0.25) * boost::units::si::meter)
         , omega(Dimensionless<Y>(2)*Const::PI() * Const::C()/lambda * boost::units::si::radian)
         , dx(lambda / Y(nl))
         , dy(dx)
@@ -62,7 +62,7 @@ public:
         return usin(underlying_cast<Y>(omega*time)) * Dimensionless<Y>(1000) * boost::units::si::ampere;
     }
 
-    void main() {
+    void main() { 
         YeeGrid<Y> grid1(nx, ny, nz, dt, dx, dy, dz);
         setupGrid(grid1);
         calcCoefs(grid1);
@@ -75,27 +75,43 @@ public:
 //                make_triple<Y>  (0.001, 0, 0),
 //                make_triple<Y>  (2.5,   0, 0));
 
-        ConvolutionalPML<Y> pml2 {&grid1,
-                { {1, 9},
-                  {1, ny-1},
-                  {1, nz-1}},
+        std::cout << "EPS0 = " << Const::EPS_0() << std::endl;
+        std::cout << "omega =" << omega << std::endl;
+
+        Dimensionless<Y> r = Y(0.01), g = Y(2.5);
+
+        ConvolutionalPML<Y> pmlX1 {&grid1,
+                { {1, 4}, {4, ny-4}, {4, nz-4}},
                 {AxialDirection::negative, {}, {}},
-                {Y(0.001), Y(0.001), Y(0.0)},
-                {Y(2.5),   Y(2.5),   Y(0.0)}};
+                {r, r, r}, {g, g, g} };
+        ConvolutionalPML<Y> pmlX2 {&grid1,
+                { {nx-4, nx-1}, {4, ny-4}, {4, nz-4}},
+                {AxialDirection::positive, {}, {}},
+                {r, r, r}, {g, g, g} };
+        ConvolutionalPML<Y> pmlY1 {&grid1,
+                { {4, nx-4}, {1, 4}, {4, nz-4}},
+                { Optional<AxialDirection>(), AxialDirection::negative, {}},
+                {r, r, r}, {g, g, g} };
+        ConvolutionalPML<Y> pmlY2 {&grid1,
+                { {4, nx-4}, {ny-4, ny-1}, {4, nz-4}},
+                { Optional<AxialDirection>(), AxialDirection::positive, {}},
+                {r, r, r}, {g, g, g} };
+        ConvolutionalPML<Y> pmlZ1 {&grid1,
+                { {4, nx-4}, {4, ny-4}, {1, 4}},
+                { Optional<AxialDirection>(), {}, AxialDirection::negative },
+                {r, r, r}, {g, g, g} };
+        ConvolutionalPML<Y> pmlZ2 {&grid1,
+                { {4, nx-4}, {4, ny-4}, {nz-4, nz-1}},
+                { Optional<AxialDirection>(), {}, AxialDirection::positive },
+                {r, r, r}, {g, g, g} };
 
-        pml2.setup();
-        pml2.precalculatePmlCoefficients();
 
-        ConvolutionalPML<Y> pml3 {&grid1,
-                { {0, nx},
-                  {0, 8},
-                  {0, nz}},
-                {Optional<AxialDirection>(), AxialDirection::negative, {}},
-                {Y(0.001), Y(0.001), Y(0.0)},
-                {Y(2.5),   Y(2.5),   Y(0.0)}};
-
-        //pml3.setup();
-
+        pmlX1.setup();
+        pmlX2.setup();
+        pmlY1.setup();
+        pmlY2.setup();
+        pmlZ1.setup();
+        pmlZ2.setup();
 
         dumpImage("sigma_Ex.ppm", grid1.sigma_Ex);
         dumpImage("sigma_Ey.ppm", grid1.sigma_Ey);
@@ -103,9 +119,9 @@ public:
         int x0 = nx / 2;
         int y0 = ny / 2;
         int z0 = nz / 2;
-        for (Index iy = 0; iy < 30; ++iy) {
-            std::cout << iy << '\t'
-                      << grid1.sigma_Ey.at(0, iy, 0) << '\n';
+        for (Index ix = 0; ix < 30; ++ix) {
+            std::cout << ix << '\t'
+                      << grid1.sigma_Ex.at(ix, y0-20, z0) << '\n';
         }
         CurrentSource<Y> source(x0, y0, z0);
         source.calcCoefs(grid1);
@@ -114,18 +130,31 @@ public:
         time = Dimensionless<Y>(0) * boost::units::si::second;
         int iter = 0;
         while (iter < 500) {
-            auto fmt = boost::format("field_%00d.ppm") % iter;
+            auto fmt = boost::format("field_%04d.ppm") % iter;
             dumpImage(fmt.str(), grid1.Ez);
             calcH(grid1);
-            pml2.calcH();
+            pmlX1.calcH();
+            pmlX2.calcH();
+            pmlY1.calcH();
+            pmlY2.calcH();
+            pmlZ1.calcH();
+            pmlZ2.calcH();
 
             calcE(grid1);
-            pml2.calcE();
+            pmlX1.calcE();
+            pmlX2.calcE();
+            pmlY1.calcE();
+            pmlY2.calcE();
+            pmlZ1.calcE();
+            pmlZ2.calcE();
             source.updateFields(grid1, signal(time));
 
+            auto const& eX = grid1.Ex.at(x0 + 15, y0, z0);
+            auto const& eY = grid1.Ey.at(x0 + 15, y0, z0);
+            auto const& eZ = grid1.Ez.at(x0 + 15, y0, z0);
             std::cout << iter << '\t'
                       << time << '\t'
-                      << grid1.Ez.at(x0 + 30, y0, z0) << std::endl;
+                      << (eX*eX + eY*eY + eZ*eZ) << std::endl;
 
             iter++;
             time = Y(iter) * dt;
@@ -135,25 +164,25 @@ public:
     template <typename Q>
     void dumpImage(std::string const& filename, Array<Q> const& field) {
         int nx = field.getCountX();
-        int ny = field.getCountY();
-        int z0 = field.getCountZ() / 2;
+        int nz = field.getCountZ();
+        int y0 = field.getCountY() / 2;
 
         using boost::units::abs;
 
-        Q maxField = Q::from_value(Y(0));
-        for (int ix = 25; ix < nx; ++ix)
-        for (int iy = 25; iy < ny; ++iy) {
-            if ( ((nx/2 - 3) <= ix && ix <= (nx/2 + 3)) &&
-                 ((ny/2 - 3) <= iy && iy <= (ny/2 + 3)) )
-                continue;
+//        Q maxField = Q::from_value(Y(0));
+//        for (int ix = 10; ix < nx-10; ++ix)
+//        for (int iz = 10; iy < ny-10; ++iy) {
+//            if ( ((nx/2 - 3) <= ix && ix <= (nx/2 + 3)) &&
+//                 ((ny/2 - 3) <= iy && iy <= (ny/2 + 3)) )
+//                continue;
 
-            Q curAbs = abs(field.at(ix, iy, z0));
-            if (curAbs > maxField)
-                maxField = curAbs;
-        }
+//            Q curAbs = abs(field.at(ix, iy, z0));
+//            if (curAbs > maxField)
+//                maxField = curAbs;
+//        }
 
         std::ofstream output(filename, std::ios::binary);
-        output << "P6\n" << nx << " " << ny << "\n" << 255 << "\n";
+        output << "P6\n" << nx << " " << nz << "\n" << 255 << "\n";
 
 //        valueType x = 0 / maxEx;
 //        if (boost::units::isnan(x)) {
@@ -162,28 +191,31 @@ public:
 //        }
 
         Dimensionless<Y> two {2};
-        Q zero = maxField - maxField;
+        Q thres = Q::from_value(1);
 
-        char color[3];
-        for (int iy = 0; iy < ny; ++iy)
+        char color[3] = {0};
+        for (int iz = 0; iz < nz; ++iz)
         for (int ix = 0; ix < nx; ++ix) {
-            Q val  = field.at(ix, iy, z0);
+            Q val  = field.at(ix, y0, iz);
 
             unsigned blue = 0;
             unsigned red  = 0;
-            Dimensionless<Y> level = abs(val) / maxField;
-            level *= Y(255);
+//            Dimensionless<Y> level = abs(val) / maxField;
+//            level *= Y(255);
 
-            //if (level > 0)
-            //    std::cout << "level: " << level << std::endl;
+//            //if (level > 0)
+//            //    std::cout << "level: " << level << std::endl;
 
-            int lvl = (int)level.value();
-            (val >= zero ? blue : red) = lvl;
+//            int lvl = (int)level.value();
+//            (val >= zero ? blue : red) = lvl;
 
-    //        std::cout << "red: " << red << " blue: " << blue << std::endl;
-            color[0] = red;   // red
-            color[1] = 0;     // green
-            color[2] = blue;  // blue
+//    //        std::cout << "red: " << red << " blue: " << blue << std::endl;
+//            color[0] = red;   // red
+//            color[1] = 0;     // green
+//            color[2] = blue;  // blue
+            color[0] = color[1] = color[2] = 0;
+            if (val > thres) color[0] = 255;
+            else if (val < -thres) color[2] = 255;
             output.write(&color[0], 3);
         }
     }
