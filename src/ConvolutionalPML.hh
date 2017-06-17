@@ -80,6 +80,8 @@ public:
             precalculateCoefficients<2>();
             fillSigmas<2>(*gradZ);
         }
+
+        precalculatePmlCoefficients();
     }
 
     void precalculatePmlCoefficients() {
