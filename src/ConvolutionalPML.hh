@@ -6,6 +6,7 @@
 #include "Common.hh"
 #include "Dimensions.hh"
 #include "yee_grid.hh"
+#include "rvlm/core/LeviCivita.hh"
 
 template <typename Y>
 class ConvolutionalPML {
@@ -147,7 +148,9 @@ public:
             auto const& E1 = arrE .template at<A0,A1,A2>(i0, i1+1, i2);
             auto      & H  = arrH .template at<A0,A1,A2>(i0, i1, i2);
 
-            H = H * Da - Db / delta * (E1 - E);
+            // Right shows the position of E1.
+            constexpr bool right = (rvlm::core::leviCivita(A0, A1, A2) == 1);
+            H = H * Da + Db / delta * (right ? E - E1 : E1 - E);
         }
     }
 
@@ -185,7 +188,8 @@ public:
             auto const& H1 = arrH .template at<A0,A1,A2>(i0, i1-1, i2);
             auto      & E  = arrE .template at<A0,A1,A2>(i0, i1, i2);
 
-            E = E * Ca - Cb / delta * (H - H1);
+            constexpr bool right = (rvlm::core::leviCivita(A0, A1, A2) == 1);
+            E = E * Ca + Cb / delta * (right ? H - H1 : H1 - H);
         }
     }
 
