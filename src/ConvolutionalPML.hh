@@ -1,11 +1,11 @@
 #pragma once
 #include <iostream>
+#include <boost/units/cmath.hpp>
 #include "Constants.hh"
 #include "BoostUnitsHelpers.hh"
 #include "Common.hh"
 #include "Dimensions.hh"
 #include "yee_grid.hh"
-#include <boost/units/cmath.hpp>
 
 template <typename Y>
 class ConvolutionalPML {
