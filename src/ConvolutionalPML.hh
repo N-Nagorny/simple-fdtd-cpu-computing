@@ -203,12 +203,12 @@ public:
         auto const& arrE02 = std::get<A0>(std::get<A2>(mFieldsPmlE));
         auto      & arrE0  = std::get<A0>(mYeeGrid->fieldsE);
 
-        for (Index i0: std::get<A0>(mPresentCells))
-        for (Index i1: std::get<A1>(mPresentCells))
-        for (Index i2: std::get<A2>(mPresentCells)) {
-            auto const& E01 = arrE01.template at<A0,A1,A2>(i0,i1,i2);
-            auto const& E02 = arrE02.template at<A0,A1,A2>(i0,i1,i2);
-            auto      & E0  = arrE0 .template at<A0,A1,A2>(i0,i1,i2);
+        for (Index ix: std::get<0>(mPresentCells))
+        for (Index iy: std::get<1>(mPresentCells))
+        for (Index iz: std::get<2>(mPresentCells)) {
+            auto const& E01 = arrE01.at(ix,iy,iz);
+            auto const& E02 = arrE02.at(ix,iy,iz);
+            auto      & E0  = arrE0 .at(ix,iy,iz);
 
             E0 = E01 + E02;
         }
@@ -224,12 +224,12 @@ public:
         auto const& arrH02 = std::get<A0>(std::get<A2>(mFieldsPmlH));
         auto      & arrH0  = std::get<A0>(mYeeGrid->fieldsH);
 
-        for (Index i0: std::get<A0>(mPresentCells))
-        for (Index i1: std::get<A1>(mPresentCells))
-        for (Index i2: std::get<A2>(mPresentCells)) {
-            auto const& H01 = arrH01.template at<A0,A1,A2>(i0,i1,i2);
-            auto const& H02 = arrH02.template at<A0,A1,A2>(i0,i1,i2);
-            auto      & H0  = arrH0 .template at<A0,A1,A2>(i0,i1,i2);
+        for (Index ix: std::get<0>(mPresentCells))
+        for (Index iy: std::get<1>(mPresentCells))
+        for (Index iz: std::get<2>(mPresentCells)) {
+            auto const& H01 = arrH01.at(ix,iy,iz);
+            auto const& H02 = arrH02.at(ix,iy,iz);
+            auto      & H0  = arrH0 .at(ix,iy,iz);
 
             H0 = H01 + H02;
         }
