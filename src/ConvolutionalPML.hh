@@ -299,7 +299,6 @@ private:
         constexpr int A1 = (A0 + 1) % 3;
         constexpr int A2 = (A0 + 2) % 3;
 
-        Index const s2 = std::get<A2>(mPresentCells).start;
         auto const& arrEps    = std::get<A0>(mYeeGrid->epsilons);
         auto const& arrMu     = std::get<A0>(mYeeGrid->mus);
         auto & arrSigmaE = std::get<A0>(mYeeGrid->sigmasE);
