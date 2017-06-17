@@ -17,7 +17,8 @@ public:
 public:
     YeeGrid(int nx, int ny, int nz,
             Time<Y> dt, Length<Y> dx, Length<Y> dy, Length<Y> dz)
-        : delta_t(dt)
+        : numX(nx), numY(ny), numZ(nz)
+        , delta_t(dt)
         , delta_x(dx)
         , delta_y(dy)
         , delta_z(dz)
@@ -59,6 +60,9 @@ public:
     {}
 
 public:
+
+    int numX, numY, numZ;
+
     Length<ValueType>
         delta_x,
         delta_y,

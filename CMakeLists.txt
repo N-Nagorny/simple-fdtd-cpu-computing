@@ -15,6 +15,7 @@ add_executable(fdtd
    src/Dimensions.hh
    src/Constants.hh
    src/BoostUnitsHelpers.hh
+   src/PmlShell.hh
    src/main.cc)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")

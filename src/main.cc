@@ -13,6 +13,7 @@
 #include "calc_field.hh"
 #include "CurrentSource.hh"
 #include "ConvolutionalPML.hh"
+#include "PmlShell.hh"
 
 template <typename Y>
 class Problem {
@@ -67,51 +68,13 @@ public:
         setupGrid(grid1);
         calcCoefs(grid1);
 
-//        ConvolutionalPML<Y> pml(&grid1,
-//                make_triple(HalfOpenIndexRange(0, 8),
-//                            HalfOpenIndexRange(0, ny),
-//                            HalfOpenIndexRange(0, nz)),
-//                                make_triple<Optional<AxialDirection>>(AxialDirection::positive, {}, {}),
-//                make_triple<Y>  (0.001, 0, 0),
-//                make_triple<Y>  (2.5,   0, 0));
-
         std::cout << "EPS0 = " << Const::EPS_0() << std::endl;
         std::cout << "omega =" << omega << std::endl;
 
-        Dimensionless<Y> r = Y(0.01), g = Y(2.5);
+        Dimensionless<Y> r = Y(0.01), g = Y(1.5);
 
-        ConvolutionalPML<Y> pmlX1 {&grid1,
-                { {1, 4}, {4, ny-4}, {4, nz-4}},
-                {AxialDirection::negative, {}, {}},
-                {r, r, r}, {g, g, g} };
-        ConvolutionalPML<Y> pmlX2 {&grid1,
-                { {nx-4, nx-1}, {4, ny-4}, {4, nz-4}},
-                {AxialDirection::positive, {}, {}},
-                {r, r, r}, {g, g, g} };
-        ConvolutionalPML<Y> pmlY1 {&grid1,
-                { {4, nx-4}, {1, 4}, {4, nz-4}},
-                { Optional<AxialDirection>(), AxialDirection::negative, {}},
-                {r, r, r}, {g, g, g} };
-        ConvolutionalPML<Y> pmlY2 {&grid1,
-                { {4, nx-4}, {ny-4, ny-1}, {4, nz-4}},
-                { Optional<AxialDirection>(), AxialDirection::positive, {}},
-                {r, r, r}, {g, g, g} };
-        ConvolutionalPML<Y> pmlZ1 {&grid1,
-                { {4, nx-4}, {4, ny-4}, {1, 4}},
-                { Optional<AxialDirection>(), {}, AxialDirection::negative },
-                {r, r, r}, {g, g, g} };
-        ConvolutionalPML<Y> pmlZ2 {&grid1,
-                { {4, nx-4}, {4, ny-4}, {nz-4, nz-1}},
-                { Optional<AxialDirection>(), {}, AxialDirection::positive },
-                {r, r, r}, {g, g, g} };
-
-
-        pmlX1.setup();
-        pmlX2.setup();
-        pmlY1.setup();
-        pmlY2.setup();
-        pmlZ1.setup();
-        pmlZ2.setup();
+        PmlShell<Y> shell(&grid1, 4, r, g);
+        shell.setup();
 
         dumpImage("sigma_Ex.ppm", grid1.sigma_Ex);
         dumpImage("sigma_Ey.ppm", grid1.sigma_Ey);
@@ -133,20 +96,10 @@ public:
             auto fmt = boost::format("field_%04d.ppm") % iter;
             dumpImage(fmt.str(), grid1.Ez);
             calcH(grid1);
-            pmlX1.calcH();
-            pmlX2.calcH();
-            pmlY1.calcH();
-            pmlY2.calcH();
-            pmlZ1.calcH();
-            pmlZ2.calcH();
+            shell.calcH();
 
             calcE(grid1);
-            pmlX1.calcE();
-            pmlX2.calcE();
-            pmlY1.calcE();
-            pmlY2.calcE();
-            pmlZ1.calcE();
-            pmlZ2.calcE();
+            shell.calcE();
             source.updateFields(grid1, signal(time));
 
             auto const& eX = grid1.Ex.at(x0 + 15, y0, z0);
