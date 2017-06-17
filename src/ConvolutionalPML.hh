@@ -326,7 +326,7 @@ private:
 
             ElectricConductivity<Y> cdty0 = conductivityProfile<A0>(itwiceE);
             ElectricConductivity<Y> cdty1 = conductivityProfile<A0>(itwiceH);
-            std::cerr << "PROFILE for axis " << A0 << " [" << itwiceE << "] " << cdty0 << '\n';
+            std::cerr << "PROFILE for axis " << A0 << " [" << i0 << "] " << cdty1 << '\n';
 
             for (auto i1: std::get<A1>(mPresentCells)) {
                 (void)i1;
