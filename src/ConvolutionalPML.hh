@@ -133,7 +133,7 @@ public:
         constexpr int A1 = Axis1;
         constexpr int A2 = 3 - (Axis1 + Axis0);
 
-        auto const& arrDa = std::get<A0>(mFieldsDa);
+        auto const& arrDa = std::get<A1>(mFieldsDa);
         auto const& arrDb = std::get<A1>(mFieldsDb);
         auto const& arrE  = std::get<A2>(mYeeGrid->fieldsE);
         auto const& delta = std::get<A1>(mYeeGrid->spatialSteps);
@@ -163,7 +163,7 @@ public:
         sumPmlFieldsH<1>();
         calcPmlH<2, 0>();
         calcPmlH<2, 1>();
-        sumPmlFieldsH<1>();
+        sumPmlFieldsH<2>();
     }
 
     template <int Axis0, int Axis1>
@@ -173,7 +173,7 @@ public:
         constexpr int A1 = Axis1;
         constexpr int A2 = 3 - (Axis1 + Axis0);
 
-        auto const& arrCa = std::get<A0>(mFieldsCa);
+        auto const& arrCa = std::get<A1>(mFieldsCa);
         auto const& arrCb = std::get<A1>(mFieldsCb);
         auto const& arrH  = std::get<A2>(mYeeGrid->fieldsH);
         auto const& delta = std::get<A1>(mYeeGrid->spatialSteps);
