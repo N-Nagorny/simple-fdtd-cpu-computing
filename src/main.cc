@@ -33,8 +33,8 @@ public:
     const Time<Y> dt;
 
     Problem()
-        : nx(65)
-        , ny(65)
+        : nx(129)
+        , ny(129)
         , nz(129)
         , nl(20)
         , lambda(Y(0.25) * boost::units::si::meter)
