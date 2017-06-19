@@ -18,10 +18,10 @@ public:
     using Array = rvlm::core::SolidArray3d<YY, Index>;
 
     BerengerPML(YeeGrid<Y> *grid,
-                     HalfOpenIndexRanges         const& presentCells,
-                     Triple<Optional<AxialDirection>> const& gradientDirection,
-                     Triple<Dimensionless<Y>>    const& reflectionCoeffs,
-                     Triple<Dimensionless<Y>>    const& parametersG)
+                HalfOpenIndexRanges              const& presentCells,
+                Triple<Optional<AxialDirection>> const& gradientDirection,
+                Triple<Dimensionless<Y>>         const& reflectionCoeffs,
+                Triple<Dimensionless<Y>>         const& parametersG)
         : mYeeGrid(grid)
         , mPresentCells(presentCells)
         , mGradientDirection(gradientDirection)
