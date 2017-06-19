@@ -55,12 +55,12 @@ public:
         , mFieldsCb(mFieldCbx, mFieldCby, mFieldCbz)
         , mFieldsDa(mFieldDax, mFieldDay, mFieldDaz)
         , mFieldsDb(mFieldDbx, mFieldDby, mFieldDbz)
-        , mFieldsPmlE( {mFieldExy,   mFieldExy, mFieldExz},
-                       {mFieldEyx, mFieldExy,   mFieldEyz},
-                       {mFieldEzx, mFieldEzy, mFieldExy})
-        , mFieldsPmlH( {mFieldHxy,   mFieldHxy, mFieldHxz},
-                       {mFieldHyx, mFieldHxy,   mFieldHyz},
-                       {mFieldHzx, mFieldHzy, mFieldHxy})
+        , mFieldsPmlE(nullptr,   mFieldExy, mFieldExz,
+                      mFieldEyx, nullptr,   mFieldEyz,
+                      mFieldEzx, mFieldEzy, nullptr)
+        , mFieldsPmlH(nullptr,   mFieldHxy, mFieldHxz,
+                      mFieldHyx, nullptr,   mFieldHyz,
+                      mFieldHzx, mFieldHzy, nullptr)
         {}
 
     void setup() {
@@ -137,7 +137,7 @@ public:
         auto const& arrDb = std::get<A1>(mFieldsDb);
         auto const& arrE  = std::get<A2>(mYeeGrid->fieldsE);
         auto const& delta = std::get<A1>(mYeeGrid->spatialSteps);
-        auto      & arrH  = std::get<A0>(std::get<A1>(mFieldsPmlH));
+        auto      & arrH  = mFieldsPmlH.template get<A0, A1>();
 
         for (Index i0: std::get<A0>(mPresentCells))
         for (Index i1: std::get<A1>(mPresentCells))
@@ -177,7 +177,7 @@ public:
         auto const& arrCb = std::get<A1>(mFieldsCb);
         auto const& arrH  = std::get<A2>(mYeeGrid->fieldsH);
         auto const& delta = std::get<A1>(mYeeGrid->spatialSteps);
-        auto      & arrE  = std::get<A0>(std::get<A1>(mFieldsPmlE));
+        auto      & arrE  = mFieldsPmlE.template get<A0, A1>();
 
         for (Index i0: std::get<A0>(mPresentCells))
         for (Index i1: std::get<A1>(mPresentCells))
@@ -199,8 +199,8 @@ public:
         constexpr int A1 = (Axis + 1) % 3;
         constexpr int A2 = (Axis + 2) % 3;
 
-        auto const& arrE01 = std::get<A0>(std::get<A1>(mFieldsPmlE));
-        auto const& arrE02 = std::get<A0>(std::get<A2>(mFieldsPmlE));
+        auto const& arrE01 = mFieldsPmlE.template get<A0, A1>();
+        auto const& arrE02 = mFieldsPmlE.template get<A0, A2>();
         auto      & arrE0  = std::get<A0>(mYeeGrid->fieldsE);
 
         for (Index ix: std::get<0>(mPresentCells))
@@ -220,8 +220,8 @@ public:
         constexpr int A1 = (Axis + 1) % 3;
         constexpr int A2 = (Axis + 2) % 3;
 
-        auto const& arrH01 = std::get<A0>(std::get<A1>(mFieldsPmlH));
-        auto const& arrH02 = std::get<A0>(std::get<A2>(mFieldsPmlH));
+        auto const& arrH01 = mFieldsPmlH.template get<A0, A1>();
+        auto const& arrH02 = mFieldsPmlH.template get<A0, A2>();
         auto      & arrH0  = std::get<A0>(mYeeGrid->fieldsH);
 
         for (Index ix: std::get<0>(mPresentCells))
@@ -394,8 +394,8 @@ private:
     Array<ElectricCurlCoefficient<Y>>
         mFieldCbx, mFieldCby, mFieldCbz;
 
-    Triple<Triple<Array<MagneticIntensity<Y>>&>> mFieldsPmlH;
-    Triple<Triple<Array<ElectricIntensity<Y>>&>> mFieldsPmlE;
+    XorMatrix3<Array<MagneticIntensity<Y>>> mFieldsPmlH;
+    XorMatrix3<Array<ElectricIntensity<Y>>> mFieldsPmlE;
 
     Triple<Array<Dimensionless<Y>>&> mFieldsCa;
     Triple<Array<ElectricCurlCoefficient<Y>>&> mFieldsCb;

@@ -35,6 +35,40 @@ T get(Triple<T> const& triple, Index idx) {
 
 
 
+template <typename T>
+class XorMatrix3 {
+    std::tuple<T&, T&, T&, T&, T&, T&> data;
+public:
+
+    XorMatrix3(std::nullptr_t, T& x01, T& x02, T& x10, std::nullptr_t, T& x12, T& x20, T& x21, std::nullptr_t)
+        :data(x01, x02, x10, x12, x20, x21)
+    {}
+
+    template <int row, int col>
+    T& get() {
+        static_assert(row != col, "");
+        static_assert(0 <= row && row <= 2, "");
+        static_assert(0 <= col && col <= 2, "");
+
+        return row == 0 && col == 1 ? std::ref(std::get<0>(data))
+             : row == 0 && col == 2 ? std::ref(std::get<1>(data))
+             : row == 1 && col == 0 ? std::ref(std::get<2>(data))
+             : row == 1 && col == 2 ? std::ref(std::get<3>(data))
+             : row == 2 && col == 0 ? std::ref(std::get<4>(data))
+             : row == 2 && col == 1 ? std::ref(std::get<5>(data))
+             : throw std::invalid_argument("");
+    }
+
+    template <int row, int col>
+    T const& get() const {
+        using ThisType = XorMatrix3<T>;
+        return const_cast<T const&>(
+               const_cast<ThisType const*>(this)->template get<row, col>());
+    }
+
+
+};
+
 using HalfOpenIndexRange = rvlm::core::HalfOpenRange<Index>;
 
 using HalfOpenIndexRanges = Triple<HalfOpenIndexRange>;
